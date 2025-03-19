@@ -146,6 +146,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- [Inkle](https://www.inklestudios.com/) for creating the Ink narrative scripting language
+- [Inkle](https://www.inklestudios.com/) for creating the Ink narrative scripting language and its [Unity integration](https://github.com/inkle/ink-unity-integration)
 - [MessagePipe](https://github.com/Cysharp/MessagePipe) for the messaging system
 - [VContainer](https://github.com/hadashiA/VContainer) for dependency injection

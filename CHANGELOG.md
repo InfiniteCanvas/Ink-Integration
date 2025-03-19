@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.1] - 2025-03-19
+### Changed
+- fixed package dependency path
+
 ## [1.0.0] - 2025-03-18
 
 - Initial release of Ink Integration package
