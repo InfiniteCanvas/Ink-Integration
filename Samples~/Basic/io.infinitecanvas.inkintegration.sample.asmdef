@@ -1,0 +1,29 @@
+{
+  "name": "io.infinitecanvas.inkintegration.sample",
+  "rootNamespace": "InfiniteCanvas.InkIntegration",
+  "references": [
+    "io.infinitecanvas.utilities",
+    "Unity.Addressables",
+    "Unity.ResourceManager",
+    "Unity.Burst",
+    "Unity.Logging",
+    "Unity.Collections",
+    "VContainer",
+    "MessagePipe.VContainer",
+    "MessagePipe",
+    "UniTask",
+    "Ink-Libraries",
+    "io.infinitecanvas.inkintegration",
+    "R3.Unity",
+    "R3.Unity.TextMeshPro"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

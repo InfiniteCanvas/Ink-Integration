@@ -1,0 +1,27 @@
+{
+  "name": "io.infinitecanvas.inkintegration",
+  "version": "1.0.0",
+  "displayName": "Ink Integration",
+  "description": "Ink Integration for games we want to make!",
+  "unity": "6000.1",
+  "license": "MIT",
+  "author": {
+    "name": "Infinite Canvas"
+  },
+  "dependencies": {
+    "com.unity.logging": "1.3.6",
+    "com.inkle.ink-unity-integration": "https://github.com/inkle/ink-unity-integration.git#upm",
+    "com.cysharp.messagepipe": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe",
+    "com.cysharp.messagepipe.vcontainer": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+    "io.infinitecanvas.poolingutility": "https://github.com/InfiniteCanvas/Pooling-Utility.git"
+  },
+  "samples": [
+    {
+      "displayName": "Basic Example",
+      "description": "Basic example of how to setup text display and choices",
+      "path": "Samples~/Basic"
+    }
+  ]
+}
