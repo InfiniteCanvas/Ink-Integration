@@ -2,7 +2,8 @@
 
 ## [1.0.1] - 2025-03-19
 ### Changed
-- fixed package dependency path
+~~- fixed package dependency path~~
+- nvm, rolled it back
 
 ## [1.0.0] - 2025-03-18
 
