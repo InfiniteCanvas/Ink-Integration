@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [1.0.2] - 2025-03-19
+
+### Changed
+- added extension for registering dependencies so making your own lifetime scope is easier
+
 ## [1.0.1] - 2025-03-19
 ### Changed
 ~~- fixed package dependency path~~
