@@ -1,5 +1,4 @@
-using InfiniteCanvas.InkIntegration.Messages;
-using MessagePipe;
+using InfiniteCanvas.InkIntegration.Extensions;
 using VContainer;
 using VContainer.Unity;
 
@@ -19,24 +18,7 @@ namespace InfiniteCanvas.InkIntegration
 		{
 			builder.RegisterBuildCallback(BuildCallback);
 
-			var options = builder.RegisterMessagePipe(options =>
-			                                          {
-				                                          options.InstanceLifetime = InstanceLifetime.Scoped;
-				                                          options.DefaultAsyncPublishStrategy = AsyncPublishStrategy.Parallel;
-				                                          options.HandlingSubscribeDisposedPolicy = HandlingSubscribeDisposedPolicy.Ignore;
-				                                          options.RequestHandlerLifetime = InstanceLifetime.Scoped;
-			                                          });
-
-			builder.RegisterMessageBroker<ContinueMessage>(options);
-			builder.RegisterMessageBroker<ChoiceMessage>(options);
-			builder.RegisterMessageBroker<ChoiceSelectedMessage>(options);
-			builder.RegisterMessageBroker<CommandMessage>(options);
-			builder.RegisterMessageBroker<TextMessage>(options);
-			builder.RegisterMessageBroker<SaveMessage>(options);
-			builder.RegisterMessageBroker<LoadMessage>(options);
-
-			builder.RegisterInstance(InkStoryAsset);
-			builder.RegisterEntryPoint<StoryController>().AsSelf();
+			_ = builder.RegisterStoryControllerDependencies(InkStoryAsset);
 		}
 
 		private void BuildCallback(IObjectResolver resolver) => Instance = this;
