@@ -103,7 +103,7 @@ namespace InfiniteCanvas.InkIntegration
 				var lineType = GetLineType(text);
 				if (lineType != LineType.Text)
 				{
-					var command = text[2..];
+					var command = text[2..^1];
 					_commandPublisher.Publish(new CommandMessage(text: command, lineType: lineType));
 					Log.Debug("{1} Command: {0}", command, lineType);
 				}
@@ -133,7 +133,7 @@ namespace InfiniteCanvas.InkIntegration
 
 				Log.Debug("Sending aggregate text: {0}", builder.ToString());
 				_textPublisher.Publish(builder.ToString());
-				var command = part[2..];
+				var command = part[2..^1];
 				Log.Debug("{1} Command: {0}", command, lineType);
 				_commandPublisher.Publish(new CommandMessage(lineType, command));
 				return;

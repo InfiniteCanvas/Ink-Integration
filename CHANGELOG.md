@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.3] - 2025-03-20
+### Changed
+- dropped the '\n' for commands
+
 ## [1.0.2] - 2025-03-19
 
 ### Changed
