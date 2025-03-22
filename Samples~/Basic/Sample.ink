@@ -4,8 +4,9 @@ Residence of Monsieur Phileas Fogg.
 
 === london ===
 >~Welcome
+>%Greeter
 >!hello.ogg
->@greet
+>@Greeter:greet
 >$Welcome
 Monsieur Phileas Fogg returned home early from the Reform Club, and in a new-fangled steam-carriage, besides!  
 "Passepartout," said he. "We are going around the world!"

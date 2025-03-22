@@ -14,11 +14,13 @@
 
 	public enum LineType
 	{
+		None,
 		Audio,
 		Animation,
 		Scene,
 		UI,
-		Other,
+		Image,
 		Text,
+		Other,
 	}
 }

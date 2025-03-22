@@ -40,6 +40,9 @@ This package requires the following dependencies which will be automatically ins
 - VContainer: `jp.hadashikick.vcontainer`
 - Pooling Utility: `io.infinitecanvas.poolingutility`
 
+Sometimes `Ink Unity Integration` doesn't install correctly as dependency and this package installation will abort.
+Simply install it before installing this package, by following the same steps above for this url: `https://github.com/inkle/ink-unity-integration.git#upm`
+
 ## Usage
 
 ### Basic Setup
@@ -49,12 +52,30 @@ This package requires the following dependencies which will be automatically ins
     - Select Create > Infinite Canvas > Ink Story Asset
     - Assign your compiled Ink JSON file to the InkStoryJson field
 
-2. Set up the StoryLifetimeScope:
+2. Create your StoryLifetimeScope:
+    - Create a StoryLifetimeScope class that inherits from LifetimeScope
+    - add a serialized field to your LifetimeScope
+    - inject dependencies of `StoryController`
+    - Example:
+        ```csharp
+        public InkStoryAsset InkStoryAsset;
+
+        protected override void Configure(IContainerBuilder builder){
+        _ = builder.RegisterStoryControllerDependencies(InkStoryAsset, 
+                                                       new StoryControllerLogSettings(StoryControllerLogSettings.LogLevel.Debug, (_, s) => Debug.Log(s)),
+                                                       options =>
+                                                       {
+                                                            options.HandlingSubscribeDisposedPolicy = HandlingSubscribeDisposedPolicy.Ignore;
+                                                       });
+        }
+        ```
+
+3. Set up the StoryLifetimeScope:
     - Create an empty GameObject in your scene
     - Add the StoryLifetimeScope component
     - Assign your Ink Story Asset to the component
 
-Read [VContainer](https://github.com/hadashiA/VContainer) docs for more information in the LifetimeScope.
+Read [VContainer](https://github.com/hadashiA/VContainer) docs for more information on the LifetimeScope.
 
 ### Stepping Through a Story
 
@@ -87,11 +108,11 @@ _choiceSubscriber.Subscribe(choiceMessage => {
 
 // Subscribe to commands
 _commandSubscriber.Subscribe(command => {
-    switch (command.CommandType) {
-        case CommandType.Audio:
+    switch (command.LineType) {
+        case LineType.Audio:
             // Handle audio command
             break;
-        case CommandType.Animation:
+        case LineType.Animation:
             // Handle animation command
             break;
         // etc.
@@ -107,6 +128,8 @@ The system recognizes special command syntax in your Ink files:
 - `>@` - Animation commands
 - `>~` - Scene commands
 - `>$` - UI commands
+- `>%` - Image commands
+- `>:` - Text commands
 - `>>` - Other commands
 
 Don't forget to send a `ContinueMessage` after processing a command - it doesn't do so automatically, even if it's not a normal text line.
@@ -115,10 +138,13 @@ Example in Ink:
 
 ```
 >~Welcome
+>%Greeter
 >@wave
 >!welcome.ogg
 >$Welcome
 Normal story text.
+>:shake
+>:default
 Use `Other commands` for things like auto saves, like this:
 >>Checkpoint
 ```

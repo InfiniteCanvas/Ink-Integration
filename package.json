@@ -1,6 +1,6 @@
 {
   "name": "io.infinitecanvas.inkintegration",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "displayName": "Ink Integration",
   "description": "Ink Integration for games we want to make!",
   "unity": "6000.1",
@@ -9,7 +9,6 @@
     "name": "Infinite Canvas"
   },
   "dependencies": {
-    "com.unity.logging": "1.3.6",
     "com.inkle.ink-unity-integration": "https://github.com/inkle/ink-unity-integration.git#upm",
     "com.cysharp.messagepipe": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe",
     "com.cysharp.messagepipe.vcontainer": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",

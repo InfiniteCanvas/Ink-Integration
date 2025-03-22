@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using InfiniteCanvas.InkIntegration.Extensions;
 using InfiniteCanvas.InkIntegration.Messages;
 using MessagePipe;
 using UnityEngine;

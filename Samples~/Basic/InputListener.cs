@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using InfiniteCanvas.InkIntegration.Extensions;
 using InfiniteCanvas.InkIntegration.Messages;
 using MessagePipe;
 using Unity.Logging;
