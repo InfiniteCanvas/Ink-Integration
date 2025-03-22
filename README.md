@@ -128,8 +128,8 @@ The system recognizes special command syntax in your Ink files:
 - `>@` - Animation commands
 - `>~` - Scene commands
 - `>$` - UI commands
-- `>%` - Image commands
-- `>:` - Text commands
+- `>:` - Image commands
+- `>%` - Text commands
 - `>>` - Other commands
 
 Don't forget to send a `ContinueMessage` after processing a command - it doesn't do so automatically, even if it's not a normal text line.
@@ -138,13 +138,13 @@ Example in Ink:
 
 ```
 >~Welcome
->%Greeter
+>:Greeter
 >@wave
 >!welcome.ogg
 >$Welcome
 Normal story text.
->:shake
->:default
+>%shake
+>%default
 Use `Other commands` for things like auto saves, like this:
 >>Checkpoint
 ```

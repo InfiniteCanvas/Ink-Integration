@@ -15,6 +15,9 @@
 - `CommandType` -> `LineType`
 - `RegisterStoryControllerDependencies` has better configuration options now
 - `ContinueMessage.Maximally = true` now only sends the text when encountering a command and buffers it; it will be published on the next continue message
+- TextCommand -> `>%`
+- ImageCommand -> `>:`
+- OtherCommand -> `>>`
 
 ## [1.0.3] - 2025-03-20
 

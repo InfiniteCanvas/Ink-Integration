@@ -66,8 +66,8 @@ namespace InfiniteCanvas.InkIntegration
 				'@' => LineType.Animation,
 				'~' => LineType.Scene,
 				'$' => LineType.UI,
-				'%' => LineType.Image,
-				':' => LineType.Text,
+				':' => LineType.Image,
+				'%' => LineType.Text,
 				'>' => LineType.Other,
 				_   => LineType.None,
 			};
