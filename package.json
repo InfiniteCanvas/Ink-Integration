@@ -1,6 +1,6 @@
 {
   "name": "io.infinitecanvas.inkintegration",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "displayName": "Ink Integration",
   "description": "Ink Integration for games we want to make!",
   "unity": "6000.1",
@@ -14,7 +14,8 @@
     "com.cysharp.messagepipe.vcontainer": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
-    "io.infinitecanvas.poolingutility": "https://github.com/InfiniteCanvas/Pooling-Utility.git"
+    "io.infinitecanvas.poolingutility": "https://github.com/InfiniteCanvas/Pooling-Utility.git",
+    "io.infinitecanvas.serilogintegration": "https://github.com/InfiniteCanvas/Serilog-Integration.git"
   },
   "samples": [
     {

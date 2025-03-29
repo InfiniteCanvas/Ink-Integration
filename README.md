@@ -31,17 +31,24 @@ incorporate interactive storytelling into Unity projects with a decoupled archit
 
 ## Dependencies
 
-This package requires the following dependencies which will be automatically installed:
+This package requires the following dependencies:
 
+These need to be manually installed before adding the package:
+
+- Serilog
+    - Install via `NuGet for Unity` : `https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity`
+    - Install Serilog using `NuGet for Unity`
 - Ink Unity Integration: `com.inkle.ink-unity-integration`
+    - Install via `Ink Unity Integration`: `https://github.com/inkle/ink-unity-integration.git#upm`
+
+These will be automatically installed:
+
 - MessagePipe: `com.cysharp.messagepipe`
 - MessagePipe.VContainer: `com.cysharp.messagepipe.vcontainer`
 - UniTask: `com.cysharp.unitask`
 - VContainer: `jp.hadashikick.vcontainer`
 - Pooling Utility: `io.infinitecanvas.poolingutility`
-
-Sometimes `Ink Unity Integration` doesn't install correctly as dependency and this package installation will abort.
-Simply install it before installing this package, by following the same steps above for this url: `https://github.com/inkle/ink-unity-integration.git#upm`
+- Serilog Integration: `io.infinitecanvas.serilogintegration`
 
 ## Usage
 
@@ -54,20 +61,19 @@ Simply install it before installing this package, by following the same steps ab
 
 2. Create your StoryLifetimeScope:
     - Create a StoryLifetimeScope class that inherits from LifetimeScope
-    - add a serialized field to your LifetimeScope
+    - add a serialized field for `InkStoryAsset` to your LifetimeScope
     - inject dependencies of `StoryController`
     - Example:
         ```csharp
-        public InkStoryAsset InkStoryAsset;
+      public InkStoryAsset InkStoryAsset;
+      
+        var logger = new LoggerConfiguration().MinimumLevel.Verbose()
+			                                      .WriteTo.Unity()
+			                                      .CreateLogger();
 
-        protected override void Configure(IContainerBuilder builder){
-        _ = builder.RegisterStoryControllerDependencies(InkStoryAsset, 
-                                                       new StoryControllerLogSettings(StoryControllerLogSettings.LogLevel.Debug, (_, s) => Debug.Log(s)),
-                                                       options =>
-                                                       {
-                                                            options.HandlingSubscribeDisposedPolicy = HandlingSubscribeDisposedPolicy.Ignore;
-                                                       });
-        }
+		_ = builder.RegisterStoryControllerDependencies(InkStoryAsset,
+			                                                logger,
+			                                                options => options.HandlingSubscribeDisposedPolicy = HandlingSubscribeDisposedPolicy.Ignore);
         ```
 
 3. Set up the StoryLifetimeScope:

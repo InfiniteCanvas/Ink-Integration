@@ -10,14 +10,6 @@ namespace InfiniteCanvas.InkIntegration.Samples
 {
 	public class TextPresenter : MonoBehaviour
 	{
-	#region Serialized Fields
-
-		[SerializeField] private UIDocument _uiDocument;
-		[SerializeField] private bool       _accumulateHistory = true;
-		[SerializeField] private int        _maxHistoryLines   = 50;
-
-	#endregion
-
 		private readonly List<IDisposable> _disposables = new();
 		private readonly List<string>      _textHistory = new();
 		private          ScrollView        _scrollView;
@@ -25,24 +17,6 @@ namespace InfiniteCanvas.InkIntegration.Samples
 		private Label _textContent;
 
 		private ISubscriber<TextMessage> _textSubscriber;
-
-	#region Event Functions
-
-		private void Start()
-		{
-			this.InjectStoryControllerDependencies();
-			InitializeUI();
-			_disposables.Add(_textSubscriber.Subscribe(HandleText));
-		}
-
-		private void OnDestroy()
-		{
-			foreach (var disposable in _disposables) disposable?.Dispose();
-
-			_disposables.Clear();
-		}
-
-	#endregion
 
 		[Inject]
 		public void Construct(ISubscriber<TextMessage> textSubscriber) => _textSubscriber = textSubscriber;
@@ -79,6 +53,24 @@ namespace InfiniteCanvas.InkIntegration.Samples
 				                             _scrollView.scrollOffset = new Vector2(0, _scrollView.contentContainer.worldBound.height);
 			                             })
 			           .StartingIn(10);
+		}
+
+		[SerializeField] private UIDocument _uiDocument;
+		[SerializeField] private bool       _accumulateHistory = true;
+		[SerializeField] private int        _maxHistoryLines   = 50;
+
+		private void Start()
+		{
+			this.InjectStoryControllerDependencies();
+			InitializeUI();
+			_disposables.Add(_textSubscriber.Subscribe(HandleText));
+		}
+
+		private void OnDestroy()
+		{
+			foreach (var disposable in _disposables) disposable?.Dispose();
+
+			_disposables.Clear();
 		}
 	}
 }

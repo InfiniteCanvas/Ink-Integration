@@ -11,7 +11,8 @@
     "MessagePipe.VContainer",
     "MessagePipe",
     "UniTask",
-    "Ink-Libraries"
+    "Ink-Libraries",
+    "io.infinitecanvas.serilogintegration"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

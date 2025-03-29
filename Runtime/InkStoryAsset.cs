@@ -6,10 +6,6 @@ namespace InfiniteCanvas.InkIntegration
 	[CreateAssetMenu(fileName = "Ink Story Asset", menuName = "Infinite Canvas/Ink Story Asset", order = 0)]
 	public class InkStoryAsset : ScriptableObject
 	{
-	#region Serialized Fields
-
 		public TextAsset InkStoryJson;
-
-	#endregion
 	}
 }

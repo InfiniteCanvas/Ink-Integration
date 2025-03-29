@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [3.0.0] - 2025-03-29
+### Removed
+- Old logging setup
+
+### Added
+- Serilog for logging
+
 ## [2.0.0] - 2025-03-22
 
 ### Removed

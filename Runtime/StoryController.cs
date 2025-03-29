@@ -1,13 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using InfiniteCanvas.InkIntegration.Messages;
 using Ink.Runtime;
 using MessagePipe;
-using UnityEngine.Assertions;
 using VContainer.Unity;
-using File = System.IO.File;
-using LogLevel = InfiniteCanvas.InkIntegration.StoryControllerLogSettings.LogLevel;
+using ILogger = Serilog.ILogger;
 
 namespace InfiniteCanvas.InkIntegration
 {
@@ -17,14 +16,13 @@ namespace InfiniteCanvas.InkIntegration
 		private readonly IPublisher<CommandMessage> _commandPublisher;
 		private readonly IDisposable                _disposable;
 		private readonly IPublisher<EndMessage>     _endPublisher;
-		private readonly StoryControllerLogSettings _logSettings;
 		private readonly IPublisher<TextMessage>    _textPublisher;
 
 		// I'm exposing this, so I can subscribe to some of the events, if ever needed
 		public readonly Story Story;
 
 		public StoryController(InkStoryAsset                      inkStoryAsset,
-		                       StoryControllerLogSettings         logSettings,
+		                       ILogger                            logger,
 		                       ISubscriber<ContinueMessage>       continueSubscriber,
 		                       ISubscriber<ChoiceSelectedMessage> choiceSelectedSubscriber,
 		                       ISubscriber<SaveMessage>           saveMessageSubscriber,
@@ -34,11 +32,11 @@ namespace InfiniteCanvas.InkIntegration
 		                       IPublisher<TextMessage>            textPublisher,
 		                       IPublisher<EndMessage>             endPublisher)
 		{
-			_logSettings = logSettings;
 			_textPublisher = textPublisher;
 			_endPublisher = endPublisher;
 			_commandPublisher = commandPublisher;
 			_choicePublisher = choicePublisher;
+			_log = logger.ForContext<StoryController>();
 			Story = new Story(inkStoryAsset.InkStoryJson.text);
 
 			var bag = DisposableBag.CreateBuilder();
@@ -52,7 +50,7 @@ namespace InfiniteCanvas.InkIntegration
 		public void Dispose() => _disposable.Dispose();
 
 
-		public void Initialize() => _logSettings.LogIf(LogLevel.Info, "Story Controller initialized");
+		public void Initialize() => _log.Information("Story Controller initialized");
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private bool IsCommand(ReadOnlySpan<char> text, out LineType lineType)
@@ -72,10 +70,10 @@ namespace InfiniteCanvas.InkIntegration
 				_   => LineType.None,
 			};
 			if (lineType == LineType.None)
-				_logSettings.LogIf(LogLevel.Warning,
-				                   "It's an unknown command. While it's not going to crash anything, you should never see this message. "
-				                 + "Use '>:' for 'Other' type commands for now and maybe send a pull request for the command type you need. "
-				                 + $"Parsed text: {text.ToString()}");
+				_log.Warning("It's an unknown command. While it's not going to crash anything, you should never see this message. "
+				           + "Use '>:' for 'Other' type commands for now and maybe send a pull request for the command type you need. "
+				           + "Parsed text: {RawText:l}",
+				             text.ToString());
 
 			return true;
 		}
@@ -86,7 +84,7 @@ namespace InfiniteCanvas.InkIntegration
 		{
 			if (_hasBufferedCommand)
 			{
-				_logSettings.LogIf(LogLevel.Debug, $"{_bufferedCommand.LineType} Command: {_bufferedCommand.Text}");
+				_log.Debug("{CommandType} Command: {CommandText:l}", _bufferedCommand.LineType, _bufferedCommand.Text);
 				_commandPublisher.Publish(_bufferedCommand);
 				_hasBufferedCommand = false;
 				return;
@@ -96,7 +94,7 @@ namespace InfiniteCanvas.InkIntegration
 			{
 				if (Story.currentChoices.Count > 0) return;
 				_endPublisher.Publish(default);
-				_logSettings.LogIf(LogLevel.Info, "Story ended.");
+				_log.Information("Story ended");
 				return;
 			}
 
@@ -108,20 +106,23 @@ namespace InfiniteCanvas.InkIntegration
 
 			var text = Story.Continue();
 
-			Assert.IsFalse(string.IsNullOrEmpty(text));
 			if (string.IsNullOrEmpty(text))
-				_logSettings.LogIf(LogLevel.Error, "Text returned is null or empty.");
+			{
+				_log.Error("Text returned is null or empty");
+				return;
+			}
 
-			_logSettings.LogIf(LogLevel.Verbose, $"Raw text: {text}");
+			_log.Verbose("Raw text: {RawText:l}", text);
 
 			if (IsCommand(text, out var lineType))
 			{
 				var command = text[2..^1];
+				_log.Debug("{CommandType} Command: {CommandText:l}", lineType, command);
 				_commandPublisher.Publish(new CommandMessage(text: command, lineType: lineType));
-				_logSettings.LogIf(LogLevel.Debug, $"{lineType} Command: {command}");
 			}
 			else
 			{
+				_log.Debug("Text: {Text:l}", text);
 				_textPublisher.Publish(text);
 			}
 
@@ -129,8 +130,9 @@ namespace InfiniteCanvas.InkIntegration
 			if (Story.currentChoices.Count > 0) PublishChoices();
 		}
 
-		private bool           _hasBufferedCommand;
-		private CommandMessage _bufferedCommand;
+		private          bool           _hasBufferedCommand;
+		private          CommandMessage _bufferedCommand;
+		private readonly ILogger        _log;
 
 		private void ContinueUntilCommandOrChoice()
 		{
@@ -138,7 +140,7 @@ namespace InfiniteCanvas.InkIntegration
 			while (Story.canContinue)
 			{
 				var part = Story.Continue();
-				_logSettings.LogIf(LogLevel.Verbose, $"Raw text: {part}");
+				_log.Verbose("Raw text: {RawText:l}", part);
 				if (!IsCommand(part, out var lineType))
 				{
 					builder.Append(part);
@@ -147,7 +149,7 @@ namespace InfiniteCanvas.InkIntegration
 
 				if (builder.Length > 0)
 				{
-					_logSettings.LogIf(LogLevel.Debug, $"Sending aggregate text: {builder}");
+					_log.Debug("Sending aggregate text: {Text:l}", builder);
 					_textPublisher.Publish(builder.ToString());
 					var command = part[2..^1];
 					_bufferedCommand = new CommandMessage(lineType, command);
@@ -156,14 +158,14 @@ namespace InfiniteCanvas.InkIntegration
 				else
 				{
 					var command = part[2..^1];
-					_logSettings.LogIf(LogLevel.Debug, $"{lineType} Command: {command}");
+					_log.Debug("{CommandType} Command: {CommandText:l}", lineType, command);
 					_commandPublisher.Publish(new CommandMessage(lineType, command));
 				}
 
 				return;
 			}
 
-			_logSettings.LogIf(LogLevel.Debug, $"Sending aggregate text: {builder}");
+			_log.Debug("Sending aggregate text: {Text:l}", builder);
 			_textPublisher.Publish(builder.ToString());
 
 			if (Story.currentChoices.Count > 0)
@@ -172,7 +174,7 @@ namespace InfiniteCanvas.InkIntegration
 			}
 			else
 			{
-				_logSettings.LogIf(LogLevel.Info, "Story ended.");
+				_log.Information("Story ended");
 				_endPublisher.Publish(default);
 			}
 		}
@@ -180,14 +182,14 @@ namespace InfiniteCanvas.InkIntegration
 
 		private void ChoiceSelectedHandler(ChoiceSelectedMessage message)
 		{
-			_logSettings.LogIf(LogLevel.Debug, $"Choice {message.Index} selected");
+			_log.Debug("Choice {ChoiceSelected} selected", message.Index);
 			Story.ChooseChoiceIndex(message.Index);
 		}
 
 		private void PublishChoices()
 		{
 			foreach (var choice in Story.currentChoices)
-				_logSettings.LogIf(LogLevel.Debug, $"Present choice[{choice.index}]: {choice.text}");
+				_log.Debug("Present choice[{ChoiceIndex}]: {ChoiceText:l}", choice.index, choice.text);
 
 			using (ChoiceMessage.Get(out var choiceMessage))
 				_choicePublisher.Publish(choiceMessage.Initialize(Story.currentChoices));

@@ -10,11 +10,7 @@ namespace InfiniteCanvas.InkIntegration.Samples
 {
 	public class ChoicesPresenter : MonoBehaviour
 	{
-	#region Serialized Fields
-
 		[SerializeField] private UIDocument _uiDocument;
-
-	#endregion
 
 		private readonly List<IDisposable> _disposables = new();
 
@@ -24,32 +20,6 @@ namespace InfiniteCanvas.InkIntegration.Samples
 		private ISubscriber<ChoiceMessage>  _choiceSubscriber;
 		private IPublisher<ContinueMessage> _continuePublisher;
 		private VisualElement               _root;
-
-	#region Event Functions
-
-		public void Start()
-		{
-			this.InjectStoryControllerDependencies();
-			_root = _uiDocument.rootVisualElement;
-			_choicesList = _root.Q<ListView>("choices-list");
-
-			ConfigureListView();
-
-			// Subscribe to choice messages
-			_disposables.Add(_choiceSubscriber.Subscribe(HandleChoices));
-
-			// Initially hide choices container
-			_root.style.display = DisplayStyle.None;
-		}
-
-		private void OnDestroy()
-		{
-			foreach (var disposable in _disposables) disposable.Dispose();
-
-			_disposables.Clear();
-		}
-
-	#endregion
 
 		[Inject]
 		public void Construct(ISubscriber<ChoiceMessage>        choiceSubscriber,
@@ -90,6 +60,27 @@ namespace InfiniteCanvas.InkIntegration.Samples
 			_choiceSelectedPublisher.Publish(index);
 			_root.style.display = DisplayStyle.None;
 			_continuePublisher.Publish(InputListener.Maximally);
+		}
+
+		public void Start()
+		{
+			this.InjectStoryControllerDependencies();
+			_root = _uiDocument.rootVisualElement;
+			_choicesList = _root.Q<ListView>("choices-list");
+
+			ConfigureListView();
+
+			_disposables.Add(_choiceSubscriber.Subscribe(HandleChoices));
+
+			// Initially hide choices container
+			_root.style.display = DisplayStyle.None;
+		}
+
+		private void OnDestroy()
+		{
+			foreach (var disposable in _disposables) disposable.Dispose();
+
+			_disposables.Clear();
 		}
 	}
 }

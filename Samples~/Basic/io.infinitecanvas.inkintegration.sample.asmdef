@@ -3,19 +3,13 @@
   "rootNamespace": "InfiniteCanvas.InkIntegration",
   "references": [
     "io.infinitecanvas.utilities",
-    "Unity.Addressables",
-    "Unity.ResourceManager",
-    "Unity.Burst",
-    "Unity.Logging",
-    "Unity.Collections",
     "VContainer",
     "MessagePipe.VContainer",
     "MessagePipe",
     "UniTask",
     "Ink-Libraries",
     "io.infinitecanvas.inkintegration",
-    "R3.Unity",
-    "R3.Unity.TextMeshPro"
+    "io.infinitecanvas.serilogintegration"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

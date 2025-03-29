@@ -1,7 +1,8 @@
 ﻿using System;
 using InfiniteCanvas.InkIntegration.Messages;
 using MessagePipe;
-using UnityEngine;
+using Serilog;
+using Serilog.Core;
 using VContainer;
 using VContainer.Unity;
 
@@ -11,20 +12,14 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 	{
 		public static MessagePipeOptions RegisterStoryControllerDependencies(this IContainerBuilder     builder,
 		                                                                     InkStoryAsset              inkStoryAsset,
-		                                                                     StoryControllerLogSettings logSettings = null,
-		                                                                     Action<MessagePipeOptions> configure   = null)
+		                                                                     Logger                     logger,
+		                                                                     Action<MessagePipeOptions> configure = null)
 		{
 			configure ??= _ => { };
 			var options = builder.RegisterMessagePipe(configure);
 
-			logSettings ??= new StoryControllerLogSettings(StoryControllerLogSettings.LogLevel.Debug,
-			                                               (_, s) =>
-			                                               {
-				                                               Debug.Log(s);
-			                                               });
-
-			builder.RegisterInstance(logSettings);
 			builder.RegisterInstance(inkStoryAsset);
+			builder.RegisterInstance(logger).As<ILogger>();
 
 			builder.RegisterMessageBroker<ContinueMessage>(options);
 			builder.RegisterMessageBroker<ChoiceMessage>(options);
