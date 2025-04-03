@@ -1,7 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/InfiniteCanvas/Ink%20Integration/Samples/Basic/Choices.uss?fileID=7433441132597879392&amp;guid=8a1f8f9008293ba49a9b0da68badf914&amp;type=3#Choices"/>
-    <ui:VisualElement class="choices-container" style="width: 100%; height: 20%; top: 80%;">
-        <ui:Label text="Make a Choice:" class="choices-header"/>
-        <ui:ListView name="choices-list" selectionType="None" virtualizationMethod="DynamicHeight" class="choices-list"/>
-    </ui:VisualElement>
-</ui:UXML>

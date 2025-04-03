@@ -4,15 +4,14 @@
   "references": [
     "io.infinitecanvas.utilities",
     "io.infinitecanvas.pooling",
-    "Unity.Burst",
-    "Unity.Logging",
-    "Unity.Collections",
     "VContainer",
     "MessagePipe.VContainer",
     "MessagePipe",
     "UniTask",
     "Ink-Libraries",
-    "io.infinitecanvas.serilogintegration"
+    "io.infinitecanvas.serilogintegration",
+    "FMODUnity",
+    "Unity.Collections"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

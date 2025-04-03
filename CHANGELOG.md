@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [4.0.0] - 2025-04-03
+### Added
+- Support for custom audio commands in ink text
+  - see README for more info
+- Log settings for this package
+
+### Changed
+- `LineType` -> `CommandType`
+- I should stop flip-flopping between these names lol
+- adjusted sample (which will break if you don't have the FMOD example project)
+- LogLevel for text and choice logging elevated to `Information`
+
 ## [3.0.0] - 2025-03-29
 ### Removed
 - Old logging setup

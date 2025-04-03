@@ -1,18 +1,18 @@
 ﻿namespace InfiniteCanvas.InkIntegration.Messages
 {
-	public struct CommandMessage
+	public readonly struct CommandMessage
 	{
-		public LineType LineType;
-		public string   Text;
+		public readonly CommandType CommandType;
+		public readonly string      Text;
 
-		public CommandMessage(LineType lineType, string text)
+		public CommandMessage(CommandType commandType, string text)
 		{
-			LineType = lineType;
+			CommandType = commandType;
 			Text = text;
 		}
 	}
 
-	public enum LineType
+	public enum CommandType
 	{
 		None,
 		Audio,

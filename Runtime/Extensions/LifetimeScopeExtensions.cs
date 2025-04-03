@@ -1,5 +1,6 @@
 ﻿using System;
 using InfiniteCanvas.InkIntegration.Messages;
+using InfiniteCanvas.InkIntegration.Parsers.Audio;
 using MessagePipe;
 using Serilog;
 using Serilog.Core;
@@ -12,6 +13,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 	{
 		public static MessagePipeOptions RegisterStoryControllerDependencies(this IContainerBuilder     builder,
 		                                                                     InkStoryAsset              inkStoryAsset,
+		                                                                     AudioLibrary               audioLibrary,
 		                                                                     Logger                     logger,
 		                                                                     Action<MessagePipeOptions> configure = null)
 		{
@@ -19,6 +21,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 			var options = builder.RegisterMessagePipe(configure);
 
 			builder.RegisterInstance(inkStoryAsset);
+			builder.RegisterInstance(audioLibrary);
 			builder.RegisterInstance(logger).As<ILogger>();
 
 			builder.RegisterMessageBroker<ContinueMessage>(options);
@@ -30,6 +33,8 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 			builder.RegisterMessageBroker<LoadMessage>(options);
 
 			builder.RegisterEntryPoint<StoryController>().AsSelf();
+			builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+			builder.RegisterEntryPoint<AudioPlayer>().AsSelf();
 			return options;
 		}
 	}

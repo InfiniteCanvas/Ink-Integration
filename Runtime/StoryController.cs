@@ -16,6 +16,7 @@ namespace InfiniteCanvas.InkIntegration
 		private readonly IPublisher<CommandMessage> _commandPublisher;
 		private readonly IDisposable                _disposable;
 		private readonly IPublisher<EndMessage>     _endPublisher;
+		private readonly ILogger                    _log;
 		private readonly IPublisher<TextMessage>    _textPublisher;
 
 		// I'm exposing this, so I can subscribe to some of the events, if ever needed
@@ -53,23 +54,23 @@ namespace InfiniteCanvas.InkIntegration
 		public void Initialize() => _log.Information("Story Controller initialized");
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private bool IsCommand(ReadOnlySpan<char> text, out LineType lineType)
+		private bool IsCommand(ReadOnlySpan<char> text, out CommandType commandType)
 		{
-			lineType = LineType.None;
+			commandType = CommandType.None;
 			if (text.Length < 2 || text[0] != '>') return false;
 
-			lineType = text[1] switch
+			commandType = text[1] switch
 			{
-				'!' => LineType.Audio,
-				'@' => LineType.Animation,
-				'~' => LineType.Scene,
-				'$' => LineType.UI,
-				':' => LineType.Image,
-				'%' => LineType.Text,
-				'>' => LineType.Other,
-				_   => LineType.None,
+				'!' => CommandType.Audio,
+				'@' => CommandType.Animation,
+				'~' => CommandType.Scene,
+				'$' => CommandType.UI,
+				':' => CommandType.Image,
+				'%' => CommandType.Text,
+				'>' => CommandType.Other,
+				_   => CommandType.None,
 			};
-			if (lineType == LineType.None)
+			if (commandType == CommandType.None)
 				_log.Warning("It's an unknown command. While it's not going to crash anything, you should never see this message. "
 				           + "Use '>:' for 'Other' type commands for now and maybe send a pull request for the command type you need. "
 				           + "Parsed text: {RawText:l}",
@@ -84,7 +85,7 @@ namespace InfiniteCanvas.InkIntegration
 		{
 			if (_hasBufferedCommand)
 			{
-				_log.Debug("{CommandType} Command: {CommandText:l}", _bufferedCommand.LineType, _bufferedCommand.Text);
+				_log.Debug("{CommandType} Command: {CommandText:l}", _bufferedCommand.CommandType, _bufferedCommand.Text);
 				_commandPublisher.Publish(_bufferedCommand);
 				_hasBufferedCommand = false;
 				return;
@@ -118,11 +119,11 @@ namespace InfiniteCanvas.InkIntegration
 			{
 				var command = text[2..^1];
 				_log.Debug("{CommandType} Command: {CommandText:l}", lineType, command);
-				_commandPublisher.Publish(new CommandMessage(text: command, lineType: lineType));
+				_commandPublisher.Publish(new CommandMessage(text: command, commandType: lineType));
 			}
 			else
 			{
-				_log.Debug("Text: {Text:l}", text);
+				_log.Information("Text: {Text:l}", text);
 				_textPublisher.Publish(text);
 			}
 
@@ -130,9 +131,8 @@ namespace InfiniteCanvas.InkIntegration
 			if (Story.currentChoices.Count > 0) PublishChoices();
 		}
 
-		private          bool           _hasBufferedCommand;
-		private          CommandMessage _bufferedCommand;
-		private readonly ILogger        _log;
+		private bool           _hasBufferedCommand;
+		private CommandMessage _bufferedCommand;
 
 		private void ContinueUntilCommandOrChoice()
 		{
@@ -165,7 +165,7 @@ namespace InfiniteCanvas.InkIntegration
 				return;
 			}
 
-			_log.Debug("Sending aggregate text: {Text:l}", builder);
+			_log.Information("Sending aggregate text: {Text:l}", builder);
 			_textPublisher.Publish(builder.ToString());
 
 			if (Story.currentChoices.Count > 0)
@@ -182,14 +182,14 @@ namespace InfiniteCanvas.InkIntegration
 
 		private void ChoiceSelectedHandler(ChoiceSelectedMessage message)
 		{
-			_log.Debug("Choice {ChoiceSelected} selected", message.Index);
+			_log.Information("Choice {ChoiceSelected} selected", message.Index);
 			Story.ChooseChoiceIndex(message.Index);
 		}
 
 		private void PublishChoices()
 		{
 			foreach (var choice in Story.currentChoices)
-				_log.Debug("Present choice[{ChoiceIndex}]: {ChoiceText:l}", choice.index, choice.text);
+				_log.Information("Present choice[{ChoiceIndex}]: {ChoiceText:l}", choice.index, choice.text);
 
 			using (ChoiceMessage.Get(out var choiceMessage))
 				_choicePublisher.Publish(choiceMessage.Initialize(Story.currentChoices));

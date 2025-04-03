@@ -40,6 +40,10 @@ These need to be manually installed before adding the package:
     - Install Serilog using `NuGet for Unity`
 - Ink Unity Integration: `com.inkle.ink-unity-integration`
     - Install via `Ink Unity Integration`: `https://github.com/inkle/ink-unity-integration.git#upm`
+- FMOD 2.03
+    - get from [their website](https://www.fmod.com/download#fmodforunity) or from the unity asset store
+- Odin Inspector
+    - since we're using it, you'll have to buy it on the asset store or this package will probably throw errors
 
 These will be automatically installed:
 
@@ -131,6 +135,15 @@ _commandSubscriber.Subscribe(command => {
 The system recognizes special command syntax in your Ink files:
 
 - `>!` - Audio commands
+    - Use like this: `>!EventName>other:params`
+    - delimit parameters with `>` and within those, delimit multiple values with `;`
+    - `a:Play/Stop/Toggle/Remove` -> to play a track, toggle pause/resume, remove a track, stop a track
+    - `p:x;y;z` -> plays this audio at position Vector3(x,y,z); components must be valid floats
+    - `pn:name:value` -> name is the event's parameter name, value must be a valid float
+    - `pnl:name:label` -> name is the event's parameter name, label is the parameter's label
+    - when `a:play` is used, this event will be a tracked instance instead of a one shot (use it for music or atmo sfx)
+    - `>!->a:stop` is a special command and will stop all tracked instances
+        - tracked instances are not automatically removed when the instance is finished playing (for now)
 - `>@` - Animation commands
 - `>~` - Scene commands
 - `>$` - UI commands
