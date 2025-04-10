@@ -12,10 +12,12 @@ The gist of it is **[major.minor.patch]**:
 
 ### Changed
 
-- Made the `logger` parameter optional in the extension method
+- Made some parameters optional in the extension method
   ```public static IContainerBuilder RegisterStoryControllerDependencies(this IContainerBuilder builder, ...)```
-    - it will try to resolve the needed `Serilog.ILogger` instance from the lifetime scope
+    - it will try to resolve the `Serilog.ILogger` instance from the lifetime scope if not set
     - it will throw when none is found
+    - it will try to resolve the `AudioLibrary` and `ImageLibrary` instances from the lifetime scope if not set
+        - if not found, it will not inject the parsers and processors even if `CommandProcessingOptions` for the respective commands is true
 - added an overload -> allows passing in `MessagePipeOptions` for when the message broker is already defined
     - ```csharp
       RegisterStoryControllerDependencies(this IContainerBuilder     builder,
@@ -24,8 +26,7 @@ The gist of it is **[major.minor.patch]**:
                                           ILogger                    logger                   = null,
                                           CommandProcessingOptions   commandProcessingOptions = default,
                                           AudioLibrary               audioLibrary             = null,
-                                          ImageLibrary               imageLibrary             = null,
-                                          Action<MessagePipeOptions> configure                = null)
+                                          ImageLibrary               imageLibrary             = null)
       ```
 
 ## [4.1.0] - 2025-04-10

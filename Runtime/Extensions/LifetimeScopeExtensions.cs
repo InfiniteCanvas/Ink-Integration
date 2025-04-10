@@ -11,29 +11,46 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 {
 	public static class LifetimeScopeExtensions
 	{
-		public static IContainerBuilder RegisterStoryControllerDependencies(this IContainerBuilder     builder,
-		                                                                    InkStoryAsset              inkStoryAsset,
-		                                                                    MessagePipeOptions         messagePipeOptions,
-		                                                                    ILogger                    logger                   = null,
-		                                                                    CommandProcessingOptions   commandProcessingOptions = default,
-		                                                                    AudioLibrary               audioLibrary             = null,
-		                                                                    ImageLibrary               imageLibrary             = null,
-		                                                                    Action<MessagePipeOptions> configure                = null)
+		public static IContainerBuilder RegisterStoryControllerDependencies(this IContainerBuilder   builder,
+		                                                                    InkStoryAsset            inkStoryAsset,
+		                                                                    MessagePipeOptions       messagePipeOptions,
+		                                                                    ILogger                  logger                   = null,
+		                                                                    CommandProcessingOptions commandProcessingOptions = default,
+		                                                                    AudioLibrary             audioLibrary             = null,
+		                                                                    ImageLibrary             imageLibrary             = null)
 		{
 			builder.RegisterInstance(inkStoryAsset);
 
-			if (audioLibrary != null && commandProcessingOptions.AudioProcessing)
+			if (commandProcessingOptions.AudioProcessing)
 			{
-				builder.RegisterInstance(audioLibrary);
-				builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
-				builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+				if (audioLibrary != null)
+				{
+					builder.RegisterInstance(audioLibrary);
+					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+				}
+
+				if (builder.Exists(typeof(AudioLibrary)))
+				{
+					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+				}
 			}
 
-			if (imageLibrary != null && commandProcessingOptions.ImageProcessing)
+			if (commandProcessingOptions.ImageProcessing)
 			{
-				builder.RegisterInstance(imageLibrary);
-				builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
-				builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+				if (imageLibrary != null)
+				{
+					builder.RegisterInstance(imageLibrary);
+					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
+					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+				}
+
+				if (builder.Exists(typeof(ImageLibrary)))
+				{
+					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
+					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+				}
 			}
 
 			if (logger != null)
@@ -79,19 +96,38 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 
 			builder.RegisterInstance(inkStoryAsset);
 
-			if (audioLibrary != null && commandProcessingOptions.AudioProcessing)
+			if (commandProcessingOptions.AudioProcessing)
 			{
-				builder.RegisterInstance(audioLibrary);
-				builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
-				builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+				if (audioLibrary != null)
+				{
+					builder.RegisterInstance(audioLibrary);
+					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+				}
+
+				if (builder.Exists(typeof(AudioLibrary)))
+				{
+					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+				}
 			}
 
-			if (imageLibrary != null && commandProcessingOptions.ImageProcessing)
+			if (commandProcessingOptions.ImageProcessing)
 			{
-				builder.RegisterInstance(imageLibrary);
-				builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
-				builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+				if (imageLibrary != null)
+				{
+					builder.RegisterInstance(imageLibrary);
+					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
+					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+				}
+
+				if (builder.Exists(typeof(ImageLibrary)))
+				{
+					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
+					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+				}
 			}
+
 
 			if (logger != null)
 			{
