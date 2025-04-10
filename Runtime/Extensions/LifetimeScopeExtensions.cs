@@ -11,9 +11,64 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 {
 	public static class LifetimeScopeExtensions
 	{
+		public static IContainerBuilder RegisterStoryControllerDependencies(this IContainerBuilder     builder,
+		                                                                    InkStoryAsset              inkStoryAsset,
+		                                                                    MessagePipeOptions         messagePipeOptions,
+		                                                                    ILogger                    logger                   = null,
+		                                                                    CommandProcessingOptions   commandProcessingOptions = default,
+		                                                                    AudioLibrary               audioLibrary             = null,
+		                                                                    ImageLibrary               imageLibrary             = null,
+		                                                                    Action<MessagePipeOptions> configure                = null)
+		{
+			builder.RegisterInstance(inkStoryAsset);
+
+			if (audioLibrary != null && commandProcessingOptions.AudioProcessing)
+			{
+				builder.RegisterInstance(audioLibrary);
+				builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+				builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+			}
+
+			if (imageLibrary != null && commandProcessingOptions.ImageProcessing)
+			{
+				builder.RegisterInstance(imageLibrary);
+				builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
+				builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+			}
+
+			if (logger != null)
+			{
+				builder.RegisterInstance(logger).As<ILogger>();
+			}
+			else
+			{
+				builder.Register(resolver =>
+				                 {
+					                 var injectedLogger = resolver.Resolve<ILogger>();
+					                 if (injectedLogger == null)
+						                 throw new NullReferenceException("Could not resolve ILogger. Inject it in your LifetimeScope.");
+
+					                 return injectedLogger;
+				                 },
+				                 Lifetime.Singleton);
+			}
+
+			builder.RegisterMessageBroker<ContinueMessage>(messagePipeOptions);
+			builder.RegisterMessageBroker<ChoiceMessage>(messagePipeOptions);
+			builder.RegisterMessageBroker<ChoiceSelectedMessage>(messagePipeOptions);
+			builder.RegisterMessageBroker<CommandMessage>(messagePipeOptions);
+			builder.RegisterMessageBroker<TextMessage>(messagePipeOptions);
+			builder.RegisterMessageBroker<SaveMessage>(messagePipeOptions);
+			builder.RegisterMessageBroker<LoadMessage>(messagePipeOptions);
+
+			builder.RegisterEntryPoint<StoryController>().AsSelf();
+
+			return builder;
+		}
+
 		public static MessagePipeOptions RegisterStoryControllerDependencies(this IContainerBuilder     builder,
 		                                                                     InkStoryAsset              inkStoryAsset,
-		                                                                     ILogger                    logger,
+		                                                                     ILogger                    logger                   = null,
 		                                                                     CommandProcessingOptions   commandProcessingOptions = default,
 		                                                                     AudioLibrary               audioLibrary             = null,
 		                                                                     ImageLibrary               imageLibrary             = null,
@@ -38,7 +93,22 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 				builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
 			}
 
-			builder.RegisterInstance(logger).As<ILogger>();
+			if (logger != null)
+			{
+				builder.RegisterInstance(logger).As<ILogger>();
+			}
+			else
+			{
+				builder.Register(resolver =>
+				                 {
+					                 var injectedLogger = resolver.Resolve<ILogger>();
+					                 if (injectedLogger == null)
+						                 throw new NullReferenceException("Could not resolve ILogger. Inject it in your LifetimeScope.");
+
+					                 return injectedLogger;
+				                 },
+				                 Lifetime.Singleton);
+			}
 
 			builder.RegisterMessageBroker<ContinueMessage>(options);
 			builder.RegisterMessageBroker<ChoiceMessage>(options);

@@ -8,6 +8,26 @@ The gist of it is **[major.minor.patch]**:
 - **Minor**: API upgrades, backwards compatible, behaviour unchanged
 - **Patch**: API unchanged, fixed functionality
 
+## [4.2.0] - 2025-04-10
+
+### Changed
+
+- Made the `logger` parameter optional in the extension method
+  ```public static IContainerBuilder RegisterStoryControllerDependencies(this IContainerBuilder builder, ...)```
+    - it will try to resolve the needed `Serilog.ILogger` instance from the lifetime scope
+    - it will throw when none is found
+- added an overload -> allows passing in `MessagePipeOptions` for when the message broker is already defined
+    - ```csharp
+      RegisterStoryControllerDependencies(this IContainerBuilder     builder,
+                                          InkStoryAsset              inkStoryAsset,
+                                          MessagePipeOptions         messagePipeOptions,
+                                          ILogger                    logger                   = null,
+                                          CommandProcessingOptions   commandProcessingOptions = default,
+                                          AudioLibrary               audioLibrary             = null,
+                                          ImageLibrary               imageLibrary             = null,
+                                          Action<MessagePipeOptions> configure                = null)
+      ```
+
 ## [4.1.0] - 2025-04-10
 
 ### Added
