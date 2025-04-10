@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using FMOD;
 using FMOD.Studio;
 using FMODUnity;
@@ -21,11 +22,22 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 		private readonly ILogger                         _log;
 		private readonly IAudioCommandParser             _parser;
 
-		public AudioCommandProcessor(ILogger logger, ISubscriber<CommandMessage> commandSubscriber, IAudioCommandParser parser)
+		public AudioCommandProcessor(ILogger                          logger,
+		                             ISubscriber<CommandMessage>      commandSubscriber,
+		                             IAsyncSubscriber<CommandMessage> commandAsyncSubscriber,
+		                             IAudioCommandParser              parser)
 		{
 			_parser = parser;
 			_log = logger.ForContext<AudioCommandProcessor>();
-			_disposable = commandSubscriber.Subscribe(AudioCommandHandler);
+			var bag = DisposableBag.CreateBuilder();
+			commandSubscriber.Subscribe(AudioCommandHandler).AddTo(bag);
+			commandAsyncSubscriber.Subscribe((message, _) =>
+			                                 {
+				                                 AudioCommandHandler(message);
+				                                 return UniTask.CompletedTask;
+			                                 })
+			                      .AddTo(bag);
+			_disposable = bag.Build();
 		}
 
 		public void Dispose() => _disposable?.Dispose();

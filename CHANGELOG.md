@@ -8,8 +8,16 @@ The gist of it is **[major.minor.patch]**:
 - **Minor**: API upgrades, backwards compatible, behaviour unchanged
 - **Patch**: API unchanged, fixed functionality
 
+## [4.3.1] - 2025-04-10
+
+### Fixed
+
+- fixed processors not reacting to async
+
 ## [4.3.0] - 2025-04-10
+
 ### Added
+
 - Async overloads for all messages
 
 ## [4.2.1] - 2025-04-10

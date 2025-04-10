@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using InfiniteCanvas.InkIntegration.Messages;
 using InfiniteCanvas.Utilities.Extensions;
 using MessagePipe;
@@ -20,10 +21,11 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 		private readonly ILogger                         _log;
 		private readonly ObjectPool<SpriteRenderer>      _spriteRendererPool;
 
-		public ImageCommandProcessor(ILogger                     logger,
-		                             IImageCommandParser         imageCommandParser,
-		                             ImageLibrary                imageLibrary,
-		                             ISubscriber<CommandMessage> commandMessageSubscriber)
+		public ImageCommandProcessor(ILogger                          logger,
+		                             IImageCommandParser              imageCommandParser,
+		                             ImageLibrary                     imageLibrary,
+		                             ISubscriber<CommandMessage>      commandMessageSubscriber,
+		                             IAsyncSubscriber<CommandMessage> commandMessageAsyncSubscriber)
 		{
 			_log = logger.ForContext<ImageCommandProcessor>();
 			_spriteRendererPool = new ObjectPool<SpriteRenderer>(() => new GameObject().AddComponent<SpriteRenderer>(),
@@ -36,7 +38,15 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			                                                     });
 			_imageCommandParser = imageCommandParser;
 			_imageLibrary = imageLibrary;
-			_disposable = commandMessageSubscriber.Subscribe(CommandMessageHandler);
+			var bag = DisposableBag.CreateBuilder();
+			commandMessageSubscriber.Subscribe(CommandMessageHandler).AddTo(bag);
+			commandMessageAsyncSubscriber.Subscribe((message, _) =>
+			                                        {
+				                                        CommandMessageHandler(message);
+				                                        return UniTask.CompletedTask;
+			                                        })
+			                             .AddTo(bag);
+			_disposable = bag.Build();
 		}
 
 		public void Dispose()
