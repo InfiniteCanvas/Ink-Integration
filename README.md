@@ -1,10 +1,10 @@
 # Ink Integration for Unity
 
-A Unity package that integrates Ink narrative scripting language with Unity, using MessagePipe to step through Ink story JSON files.
+A Unity package that integrates Ink narrative scripting language and FMOD with Unity, using MessagePipe to step through Ink story JSON files.
 
 ## Overview
 
-This package integrates Ink (the narrative scripting language by Inkle) with Unity, using MessagePipe for message-based communication. It allows developers to
+This package integrates Ink (the narrative scripting language by Inkle) and FMOD with Unity, using MessagePipe for message-based communication. It allows developers to
 incorporate interactive storytelling into Unity projects with a decoupled architecture.
 
 ## Features
@@ -23,7 +23,7 @@ incorporate interactive storytelling into Unity projects with a decoupled archit
 
 ### Via Unity Package Manager
 
-1. Open your Unity project
+1. Open your Unity project and install [dependencies](#dependencies)
 2. Navigate to Window > Package Manager
 3. Click the "+" button and select "Add package from git URL..."
 4. Enter `https://github.com/InfiniteCanvas/Ink-Integration.git`
@@ -47,12 +47,13 @@ These need to be manually installed before adding the package:
 
 These will be automatically installed:
 
-- MessagePipe: `com.cysharp.messagepipe`
-- MessagePipe.VContainer: `com.cysharp.messagepipe.vcontainer`
-- UniTask: `com.cysharp.unitask`
-- VContainer: `jp.hadashikick.vcontainer`
-- Pooling Utility: `io.infinitecanvas.poolingutility`
-- Serilog Integration: `io.infinitecanvas.serilogintegration`
+- MessagePipe: `https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe`
+- MessagePipe.VContainer: `https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer`
+- UniTask: `https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask`
+- VContainer: `https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer`
+- Pooling Utility: `https://github.com/InfiniteCanvas/Pooling-Utility.git`
+- Utilities for Unity: `https://github.com/InfiniteCanvas/Utilities-For-Unity.git`
+- Serilog Integration: `https://github.com/InfiniteCanvas/Serilog-Integration.git`
 
 ## Usage
 
@@ -69,15 +70,22 @@ These will be automatically installed:
     - inject dependencies of `StoryController`
     - Example:
         ```csharp
-      public InkStoryAsset InkStoryAsset;
-      
-        var logger = new LoggerConfiguration().MinimumLevel.Verbose()
-			                                      .WriteTo.Unity()
-			                                      .CreateLogger();
+        public InkStoryAsset       InkStoryAsset;
+        public AudioLibrary        AudioLibrary;
+        public ImageLibrary        ImageLibrary;
+        public LogSettingOverrides LogSettings;
+  
+        var logger = new LoggerConfiguration().OverrideLogLevels(LogSettings)
+                                              .WriteTo.Unity()
+                                              .CreateLogger();
 
-		_ = builder.RegisterStoryControllerDependencies(InkStoryAsset,
-			                                                logger,
-			                                                options => options.HandlingSubscribeDisposedPolicy = HandlingSubscribeDisposedPolicy.Ignore);
+
+        _ = builder.RegisterStoryControllerDependencies(InkStoryAsset,
+                                                        logger,
+                                                        new CommandProcessingOptions(true, true),
+                                                        AudioLibrary,
+                                                        ImageLibrary,
+                                                        options => options.HandlingSubscribeDisposedPolicy = HandlingSubscribeDisposedPolicy.Ignore);
         ```
 
 3. Set up the StoryLifetimeScope:
@@ -135,12 +143,17 @@ _commandSubscriber.Subscribe(command => {
 The system recognizes special command syntax in your Ink files:
 
 - `>!` - Audio commands
-    - Use like this: `>!EventName>other:params`
+    - Defaults:
+        - position = `0,0,0`
+        - oneshot = true
+    - Use like this: `>!EventName>other:params>other2:params1;params2`
     - delimit parameters with `>` and within those, delimit multiple values with `;`
-    - `a:Play/Stop/Toggle/Remove` -> to play a track, toggle pause/resume, remove a track, stop a track
     - `p:x;y;z` -> plays this audio at position Vector3(x,y,z); components must be valid floats
+        - needs at least `x` and `y`
+        - specifying only `x` and `y` will set z to `0`
     - `pn:name:value` -> name is the event's parameter name, value must be a valid float
     - `pnl:name:label` -> name is the event's parameter name, label is the parameter's label
+    - `a:Play/Stop/Toggle/Remove` -> to play a track, toggle pause/resume, remove a track, stop a track
     - when `a:play` is used, this event will be a tracked instance instead of a one shot (use it for music or atmo sfx)
     - `>!->a:stop` is a special command and will stop all tracked instances
         - tracked instances are not automatically removed when the instance is finished playing (for now)
@@ -148,6 +161,22 @@ The system recognizes special command syntax in your Ink files:
 - `>~` - Scene commands
 - `>$` - UI commands
 - `>:` - Image commands
+    - Defaults:
+        - position = `0,0,0`
+        - scale = `1,1,1`
+        - location = `worldspace`
+    - Use like this: `>:NameSpace;Pose>l:w>p:-6;1>s:1;1.1`
+        - Used without specifying the pose like this `>:NameSpace` will set the pose to `default`
+    - Using another command with the same namespace will replace existing sprites with that namespace
+    - delimit parameters with `>` and within those, delimit multiple values with `;`
+    - `p:x;y;z` -> puts the sprite at position Vector3(x,y,z); components must be valid floats
+        - specifying only `x` and `y` will set z to `0`
+        - needs at least `x` and `y`
+    - `s:x;y;z` -> puts the sprite at position Vector3(x,y,z); components must be valid floats
+        - specifying only `x` and `y` will set z to `1`
+        - needs at least `x` and `y`
+    - `l:s` - sets image to screen space ui
+    - `l:w` - sets image to world space
 - `>%` - Text commands
 - `>>` - Other commands
 
@@ -157,10 +186,11 @@ Example in Ink:
 
 ```
 >~Welcome
->:Greeter
 >@wave
->!welcome.ogg
->$Welcome
+>!Welcome
+>:Greeter;wave
+Hello!
+>:Greeter
 Normal story text.
 >%shake
 >%default

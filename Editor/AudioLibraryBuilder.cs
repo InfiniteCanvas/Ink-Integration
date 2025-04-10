@@ -1,19 +1,13 @@
-﻿using FMODUnity;
+using FMODUnity;
 using InfiniteCanvas.InkIntegration.Parsers.Audio;
 using Sirenix.OdinInspector;
-using Sirenix.OdinInspector.Editor;
-using UnityEditor;
-using EventReference = FMODUnity.EventReference;
 
 namespace InfiniteCanvas.InkIntegration.Editor
 {
-	public class AudioLibraryEditorWindow : OdinEditorWindow
+	public class AudioLibraryBuilder
 	{
-		[AssetList(AutoPopulate = true), Required]
+		[InlineEditor(Expanded = true), AssetList(AutoPopulate = true)]
 		public AudioLibrary AudioLibrary;
-
-		[MenuItem("Tools/Infinite Canvas/Audio Library Tool")]
-		private static void OpenWindow() { GetWindow<AudioLibraryEditorWindow>().Show(); }
 
 		[Button]
 		public void FetchEvents()
@@ -21,7 +15,6 @@ namespace InfiniteCanvas.InkIntegration.Editor
 			AudioLibrary.LibraryItems.Clear();
 			foreach (var eventRef in EventManager.Events)
 			{
-				// ignore snapshots
 				if (eventRef.Path.StartsWith("snapshot")) { continue; }
 
 				var eventReference = new EventReference() { Guid = eventRef.Guid, Path = eventRef.Path };
@@ -29,8 +22,5 @@ namespace InfiniteCanvas.InkIntegration.Editor
 				                                                           eventReference));
 			}
 		}
-
-		[Button]
-		public void WriteEvents() { AudioLibrary.ClearAndWriteDictionary(); }
 	}
 }

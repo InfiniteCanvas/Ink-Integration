@@ -1,22 +1,48 @@
 # CHANGELOG
 
-## [4.0.0] - 2025-04-03
+Using [SemVer](https://semver.org/)
+
+The gist of it is **[major.minor.patch]**:
+
+- **Major**: API breaking changes, behaviour might change
+- **Minor**: API upgrades, backwards compatible, behaviour unchanged
+- **Patch**: API unchanged, fixed functionality
+
+## [4.1.0] - 2025-04-10
+
 ### Added
+
+- Support for custom image commands in ink text
+    - see README for more info
+- made command processing optional
+
+### Changed
+
+- Updated basic sample
+
+## [4.0.0] - 2025-04-03
+
+### Added
+
 - Support for custom audio commands in ink text
-  - see README for more info
+    - see README for more info
 - Log settings for this package
 
 ### Changed
+
 - `LineType` -> `CommandType`
 - I should stop flip-flopping between these names lol
 - adjusted sample (which will break if you don't have the FMOD example project)
 - LogLevel for text and choice logging elevated to `Information`
 
 ## [3.0.0] - 2025-03-29
+
 ### Removed
+
 - Old logging setup
 
 ### Added
+
 - Serilog for logging
 
 ## [2.0.0] - 2025-03-22

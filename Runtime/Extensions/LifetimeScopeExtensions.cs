@@ -1,9 +1,9 @@
 ﻿using System;
 using InfiniteCanvas.InkIntegration.Messages;
 using InfiniteCanvas.InkIntegration.Parsers.Audio;
+using InfiniteCanvas.InkIntegration.Parsers.Image;
 using MessagePipe;
 using Serilog;
-using Serilog.Core;
 using VContainer;
 using VContainer.Unity;
 
@@ -13,15 +13,31 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 	{
 		public static MessagePipeOptions RegisterStoryControllerDependencies(this IContainerBuilder     builder,
 		                                                                     InkStoryAsset              inkStoryAsset,
-		                                                                     AudioLibrary               audioLibrary,
-		                                                                     Logger                     logger,
-		                                                                     Action<MessagePipeOptions> configure = null)
+		                                                                     ILogger                    logger,
+		                                                                     CommandProcessingOptions   commandProcessingOptions = default,
+		                                                                     AudioLibrary               audioLibrary             = null,
+		                                                                     ImageLibrary               imageLibrary             = null,
+		                                                                     Action<MessagePipeOptions> configure                = null)
 		{
 			configure ??= _ => { };
 			var options = builder.RegisterMessagePipe(configure);
 
 			builder.RegisterInstance(inkStoryAsset);
-			builder.RegisterInstance(audioLibrary);
+
+			if (audioLibrary != null && commandProcessingOptions.AudioProcessing)
+			{
+				builder.RegisterInstance(audioLibrary);
+				builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
+				builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
+			}
+
+			if (imageLibrary != null && commandProcessingOptions.ImageProcessing)
+			{
+				builder.RegisterInstance(imageLibrary);
+				builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
+				builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
+			}
+
 			builder.RegisterInstance(logger).As<ILogger>();
 
 			builder.RegisterMessageBroker<ContinueMessage>(options);
@@ -33,9 +49,20 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 			builder.RegisterMessageBroker<LoadMessage>(options);
 
 			builder.RegisterEntryPoint<StoryController>().AsSelf();
-			builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
-			builder.RegisterEntryPoint<AudioPlayer>().AsSelf();
+
 			return options;
+		}
+	}
+
+	public readonly struct CommandProcessingOptions
+	{
+		public readonly bool ImageProcessing;
+		public readonly bool AudioProcessing;
+
+		public CommandProcessingOptions(bool imageProcessing, bool audioProcessing)
+		{
+			ImageProcessing = imageProcessing;
+			AudioProcessing = audioProcessing;
 		}
 	}
 }

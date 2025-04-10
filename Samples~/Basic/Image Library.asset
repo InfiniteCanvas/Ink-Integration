@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b83adefb46644f6b8047adc01d3fdc4, type: 3}
+  m_Name: Image Library
+  m_EditorClassIdentifier: 
+  _runtimeLibrary:
+    _serializedData:
+    - OuterKey: 671293589
+      InnerDictionary:
+      - InnerKey: -730064793
+        Value: {fileID: -7773982218229413367, guid: 5d832db948635194d84b36b1ea58fd5d, type: 3}
+    - OuterKey: 1612347937
+      InnerDictionary:
+      - InnerKey: -730064793
+        Value: {fileID: 4364443952372702543, guid: 9c326609a13599b4c840e8de3a9d9554, type: 3}
+    - OuterKey: 1420894839
+      InnerDictionary:
+      - InnerKey: -730064793
+        Value: {fileID: 3087526407983406133, guid: 46c4b29798166f04490131eeae10e55f, type: 3}
+      - InnerKey: 1547740930
+        Value: {fileID: 244930316337356482, guid: 746626fbe0ba529499894bc600901650, type: 3}
+      - InnerKey: -1170920611
+        Value: {fileID: -6331035734334293985, guid: 225cc2fec3e075e46a864d2b2aca981b, type: 3}
+  DefaultSprite: {fileID: 21300000, guid: 3f2d8e263d8314a48a35859e01318f35, type: 3}
+  _imageLibrary:
+    _serializedData:
+    - OuterKey: Carliss
+      InnerDictionary:
+      - InnerKey: default
+        Value: {fileID: -7773982218229413367, guid: 5d832db948635194d84b36b1ea58fd5d, type: 3}
+    - OuterKey: GoblinCrusher
+      InnerDictionary:
+      - InnerKey: default
+        Value: {fileID: 4364443952372702543, guid: 9c326609a13599b4c840e8de3a9d9554, type: 3}
+    - OuterKey: Ymir
+      InnerDictionary:
+      - InnerKey: default
+        Value: {fileID: 3087526407983406133, guid: 46c4b29798166f04490131eeae10e55f, type: 3}
+      - InnerKey: scared
+        Value: {fileID: 244930316337356482, guid: 746626fbe0ba529499894bc600901650, type: 3}
+      - InnerKey: surprised
+        Value: {fileID: -6331035734334293985, guid: 225cc2fec3e075e46a864d2b2aca981b, type: 3}
+  _imagePaths:
+  - Assets/InfiniteCanvas/Ink Integration/Samples/Basic/Sprites/Carliss/default.png
+  - Assets/InfiniteCanvas/Ink Integration/Samples/Basic/Sprites/GoblinCrusher/default.png
+  - Assets/InfiniteCanvas/Ink Integration/Samples/Basic/Sprites/Ymir/default.png
+  - Assets/InfiniteCanvas/Ink Integration/Samples/Basic/Sprites/Ymir/scared.png
+  - Assets/InfiniteCanvas/Ink Integration/Samples/Basic/Sprites/Ymir/surprised.png

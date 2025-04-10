@@ -10,16 +10,14 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 {
 	public class AudioCommandParser : IAudioCommandParser, IInitializable
 	{
-		private const    string       _PARAMS_NAME_LABEL               = "pnl:";
-		private const    string       _PARAMS_NAME                     = "pn:";
-		private const    string       _POSITION                        = "p:";
-		private const    string       _AUDIO_ACTION                    = "a:";
-		private const    string       _AUDIO_STOP                      = "a:stop";
-		private const    string       _AUDIO_PLAY                      = "a:play";
-		private const    string       _AUDIO_TOGGLE                    = "a:toggle";
-		private const    string       _AUDIO_REMOVE                    = "a:remove";
-		private const    string       _MULTI_VALUE_PARAMETER_DELIMITER = ";";
-		private const    string       _PARAMETER_DELIMITER             = ">";
+		private const    string       _PARAMS_NAME_LABEL = "pnl:";
+		private const    string       _PARAMS_NAME       = "pn:";
+		private const    string       _POSITION          = "p:";
+		private const    string       _AUDIO_ACTION      = "a:";
+		private const    string       _AUDIO_STOP        = "a:stop";
+		private const    string       _AUDIO_PLAY        = "a:play";
+		private const    string       _AUDIO_TOGGLE      = "a:toggle";
+		private const    string       _AUDIO_REMOVE      = "a:remove";
 		private readonly AudioLibrary _audioLibrary;
 		private readonly ILogger      _log;
 
@@ -44,7 +42,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 			parameters ??= new List<AudioParameters>();
 
 			var span = command.AsSpan();
-			var delimiterIndices = span.IndicesOf(_PARAMETER_DELIMITER);
+			var delimiterIndices = span.IndicesOf(ParserUtilities.PARAMETER_DELIMITER);
 
 			if (delimiterIndices.Length == 0)
 			{
@@ -83,10 +81,10 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 					var length = delimiterIndices[i]    - start;
 					parameterSpan = span.Slice(start, length);
 
-					_log.Debug("Raw slice: {Start}-{End} => {Value}",
-					           start,
-					           start + length,
-					           parameterSpan.ToString());
+					_log.Verbose("Raw slice: {Start}-{End} => {Value}",
+					             start,
+					             start + length,
+					             parameterSpan.ToString());
 				}
 
 				_log.Debug("Parsing audio command parameter: {AudioCommandParameter}", parameterSpan.ToString());
@@ -94,15 +92,24 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 				if (TryGetAudioAction(parameterSpan, ref audioAction))
 				{
 					isOneShot = false;
+					_log.Verbose("Set Audio Action to {AudioAction}", audioAction);
 					continue;
 				}
 
 				if (TryGetPosition(parameterSpan, ref position))
+				{
+					_log.Verbose("Set Audio Position to {AudioPosition}", position);
 					continue;
+				}
+
 				if (TryGetNameParameter(parameterSpan, parameters))
+				{
+					_log.Verbose("Set FMOD Parameter Name to {AudioName}, Value to {AudioValue}", parameters[^1].Name, parameters[^1].Value);
 					continue;
+				}
+
 				if (TryGetNameLabelParameter(parameterSpan, parameters))
-					continue;
+					_log.Verbose("Set FMOD Parameter Name to {AudioName}, Label to {AudioLabel}", parameters[^1].Name, parameters[^1].Label);
 			}
 
 			return true;
@@ -120,18 +127,18 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 			var paramSlice = paramSpan[_PARAMS_NAME_LABEL.Length..];
 
 			// parse components (format: pnl:name:label)
-			var nameIndex = paramSlice.IndexOf(_MULTI_VALUE_PARAMETER_DELIMITER);
-			if (nameIndex < 0 || paramSlice.Length <= nameIndex + _MULTI_VALUE_PARAMETER_DELIMITER.Length)
+			var nameIndex = paramSlice.IndexOf(ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER);
+			if (nameIndex < 0 || paramSlice.Length <= nameIndex + ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER.Length)
 			{
 				_log.Error("Audio Parameter malformed: [{ParameterRaw}]", paramSlice.ToString());
 				return false;
 			}
 
-			var labelSlice = paramSlice.Slice(nameIndex + _MULTI_VALUE_PARAMETER_DELIMITER.Length);
+			var labelSlice = paramSlice.Slice(nameIndex + ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER.Length);
 
 			var parsedParameters = new AudioParameters { Name = paramSlice[..nameIndex].ToString(), Label = labelSlice.ToString(), HasLabel = true };
 			parameters.Add(parsedParameters);
-			_log.Debug("Added audio parameters: {Parameter}", parsedParameters.ToString());
+			_log.Verbose("Added audio parameters: {Parameter}", parsedParameters.ToString());
 			return true;
 		}
 
@@ -146,14 +153,14 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 			var paramSlice = paramSpan[_PARAMS_NAME.Length..];
 
 			// parse components (format: pn:name:value)
-			var nameIndex = paramSlice.IndexOf(_MULTI_VALUE_PARAMETER_DELIMITER);
-			if (nameIndex < 0 || paramSlice.Length <= nameIndex + _MULTI_VALUE_PARAMETER_DELIMITER.Length)
+			var nameIndex = paramSlice.IndexOf(ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER);
+			if (nameIndex < 0 || paramSlice.Length <= nameIndex + ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER.Length)
 			{
 				_log.Error("Audio Parameter malformed: [{ParameterRaw}]", paramSlice.ToString());
 				return false;
 			}
 
-			var valueSlice = paramSlice.Slice(nameIndex + _MULTI_VALUE_PARAMETER_DELIMITER.Length);
+			var valueSlice = paramSlice.Slice(nameIndex + ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER.Length);
 
 			var name = paramSlice[..nameIndex];
 			var valueParsed = float.TryParse(valueSlice, out var value);
@@ -166,7 +173,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 
 			var parsedParameters = new AudioParameters { Name = name.ToString(), Value = value };
 			parameters.Add(parsedParameters);
-			_log.Debug("Added audio parameters: {Parameter}", parsedParameters.ToString());
+			_log.Verbose("Added audio parameters: {Parameter}", parsedParameters.ToString());
 			return true;
 		}
 
@@ -180,22 +187,22 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 			_log.Verbose("Parsing audio positions from {ParameterRaw}, with these positions: {VectorSpan}", paramSpan.ToString(), vectorSpan.ToString());
 
 			// parse components (format: p:x:y:z)
-			var xEndIndex = vectorSpan.IndexOf(_MULTI_VALUE_PARAMETER_DELIMITER);
+			var xEndIndex = vectorSpan.IndexOf(ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER);
 			if (xEndIndex < 0)
 			{
 				_log.Error("Audio Position malformed: [{VectorSpan}]", vectorSpan.ToString());
 				return false;
 			}
 
-			var yStartSpan = vectorSpan.Slice(xEndIndex + _MULTI_VALUE_PARAMETER_DELIMITER.Length);
-			var yEndIndex = yStartSpan.IndexOf(_MULTI_VALUE_PARAMETER_DELIMITER);
+			var yStartSpan = vectorSpan.Slice(xEndIndex + ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER.Length);
+			var yEndIndex = yStartSpan.IndexOf(ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER);
 			if (yEndIndex < 0)
 			{
 				_log.Error("Audio Position malformed: [{VectorSpan}]", vectorSpan.ToString());
 				return false;
 			}
 
-			var zStartSpan = yStartSpan.Slice(yEndIndex + _MULTI_VALUE_PARAMETER_DELIMITER.Length);
+			var zStartSpan = yStartSpan.Slice(yEndIndex + ParserUtilities.MULTI_VALUE_PARAMETER_DELIMITER.Length);
 
 			var xParsed = float.TryParse(vectorSpan.Slice(0, xEndIndex), out var x);
 			var yParsed = float.TryParse(yStartSpan.Slice(0, yEndIndex), out var y);

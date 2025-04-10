@@ -1,0 +1,24 @@
+{
+  "name": "io.infinitecanvas.inkintegration.sample",
+  "rootNamespace": "InfiniteCanvas.InkIntegration",
+  "references": [
+    "io.infinitecanvas.utilities",
+    "VContainer",
+    "MessagePipe.VContainer",
+    "MessagePipe",
+    "UniTask",
+    "Ink-Libraries",
+    "io.infinitecanvas.inkintegration",
+    "io.infinitecanvas.serilogintegration",
+    "FMODUnity"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -14,17 +14,17 @@ using STOP_MODE = FMOD.Studio.STOP_MODE;
 
 namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 {
-	public class AudioPlayer : IInitializable, IDisposable
+	public class AudioCommandProcessor : IInitializable, IDisposable
 	{
 		private readonly Dictionary<GUID, EventInstance> _activeEvents = new();
 		private readonly IDisposable                     _disposable;
 		private readonly ILogger                         _log;
 		private readonly IAudioCommandParser             _parser;
 
-		public AudioPlayer(ILogger logger, ISubscriber<CommandMessage> commandSubscriber, IAudioCommandParser parser)
+		public AudioCommandProcessor(ILogger logger, ISubscriber<CommandMessage> commandSubscriber, IAudioCommandParser parser)
 		{
 			_parser = parser;
-			_log = logger.ForContext<AudioPlayer>();
+			_log = logger.ForContext<AudioCommandProcessor>();
 			_disposable = commandSubscriber.Subscribe(AudioCommandHandler);
 		}
 
