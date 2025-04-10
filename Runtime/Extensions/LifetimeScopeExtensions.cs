@@ -29,8 +29,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
 					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
 				}
-
-				if (builder.Exists(typeof(AudioLibrary)))
+				else if (builder.Exists(typeof(AudioLibrary)))
 				{
 					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
 					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
@@ -45,8 +44,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
 					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
 				}
-
-				if (builder.Exists(typeof(ImageLibrary)))
+				else if (builder.Exists(typeof(ImageLibrary)))
 				{
 					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
 					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
@@ -104,8 +102,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
 					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
 				}
-
-				if (builder.Exists(typeof(AudioLibrary)))
+				else if (builder.Exists(typeof(AudioLibrary)))
 				{
 					builder.RegisterEntryPoint<AudioCommandParser>().As<IAudioCommandParser>();
 					builder.RegisterEntryPoint<AudioCommandProcessor>().AsSelf();
@@ -120,8 +117,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
 					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();
 				}
-
-				if (builder.Exists(typeof(ImageLibrary)))
+				else if (builder.Exists(typeof(ImageLibrary)))
 				{
 					builder.RegisterEntryPoint<ImageCommandParser>().As<IImageCommandParser>();
 					builder.RegisterEntryPoint<ImageCommandProcessor>().AsSelf();

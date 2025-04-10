@@ -8,6 +8,12 @@ The gist of it is **[major.minor.patch]**:
 - **Minor**: API upgrades, backwards compatible, behaviour unchanged
 - **Patch**: API unchanged, fixed functionality
 
+## [4.2.1] - 2025-04-10
+
+### Fixed
+
+- now properly chains if-else in `RegisterStoryControllerDependencies`
+
 ## [4.2.0] - 2025-04-10
 
 ### Changed
