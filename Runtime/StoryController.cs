@@ -2,6 +2,8 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using InfiniteCanvas.InkIntegration.Messages;
 using Ink.Runtime;
 using MessagePipe;
@@ -12,27 +14,43 @@ namespace InfiniteCanvas.InkIntegration
 {
 	public sealed class StoryController : IDisposable, IInitializable
 	{
-		private readonly IPublisher<ChoiceMessage>  _choicePublisher;
-		private readonly IPublisher<CommandMessage> _commandPublisher;
-		private readonly IDisposable                _disposable;
-		private readonly IPublisher<EndMessage>     _endPublisher;
-		private readonly ILogger                    _log;
-		private readonly IPublisher<TextMessage>    _textPublisher;
+		private readonly IAsyncPublisher<ChoiceMessage>  _choiceAsyncPublisher;
+		private readonly IPublisher<ChoiceMessage>       _choicePublisher;
+		private readonly IAsyncPublisher<CommandMessage> _commandAsyncPublisher;
+		private readonly IPublisher<CommandMessage>      _commandPublisher;
+		private readonly IDisposable                     _disposable;
+		private readonly IAsyncPublisher<EndMessage>     _endAsyncPublisher;
+		private readonly IPublisher<EndMessage>          _endPublisher;
+		private readonly ILogger                         _log;
+		private readonly IAsyncPublisher<TextMessage>    _textAsyncPublisher;
+		private readonly IPublisher<TextMessage>         _textPublisher;
 
 		// I'm exposing this, so I can subscribe to some of the events, if ever needed
 		public readonly Story Story;
 
-		public StoryController(InkStoryAsset                      inkStoryAsset,
-		                       ILogger                            logger,
-		                       ISubscriber<ContinueMessage>       continueSubscriber,
-		                       ISubscriber<ChoiceSelectedMessage> choiceSelectedSubscriber,
-		                       ISubscriber<SaveMessage>           saveMessageSubscriber,
-		                       ISubscriber<LoadMessage>           loadMessageSubscriber,
-		                       IPublisher<ChoiceMessage>          choicePublisher,
-		                       IPublisher<CommandMessage>         commandPublisher,
-		                       IPublisher<TextMessage>            textPublisher,
-		                       IPublisher<EndMessage>             endPublisher)
+		public StoryController(InkStoryAsset                           inkStoryAsset,
+		                       ILogger                                 logger,
+		                       ISubscriber<ContinueMessage>            continueSubscriber,
+		                       ISubscriber<ChoiceSelectedMessage>      choiceSelectedSubscriber,
+		                       ISubscriber<SaveMessage>                saveMessageSubscriber,
+		                       ISubscriber<LoadMessage>                loadMessageSubscriber,
+		                       IAsyncSubscriber<ContinueMessage>       continueAsyncSubscriber,
+		                       IAsyncSubscriber<ChoiceSelectedMessage> choiceSelectedAsyncSubscriber,
+		                       IAsyncSubscriber<SaveMessage>           saveAsyncSubscriber,
+		                       IAsyncSubscriber<LoadMessage>           loadAsyncSubscriber,
+		                       IPublisher<ChoiceMessage>               choicePublisher,
+		                       IPublisher<CommandMessage>              commandPublisher,
+		                       IPublisher<TextMessage>                 textPublisher,
+		                       IPublisher<EndMessage>                  endPublisher,
+		                       IAsyncPublisher<ChoiceMessage>          choiceAsyncPublisher,
+		                       IAsyncPublisher<CommandMessage>         commandAsyncPublisher,
+		                       IAsyncPublisher<TextMessage>            textAsyncPublisher,
+		                       IAsyncPublisher<EndMessage>             endAsyncPublisher)
 		{
+			_endAsyncPublisher = endAsyncPublisher;
+			_textAsyncPublisher = textAsyncPublisher;
+			_commandAsyncPublisher = commandAsyncPublisher;
+			_choiceAsyncPublisher = choiceAsyncPublisher;
 			_textPublisher = textPublisher;
 			_endPublisher = endPublisher;
 			_commandPublisher = commandPublisher;
@@ -41,15 +59,37 @@ namespace InfiniteCanvas.InkIntegration
 			Story = new Story(inkStoryAsset.InkStoryJson.text);
 
 			var bag = DisposableBag.CreateBuilder();
+
 			continueSubscriber.Subscribe(ContinueHandler).AddTo(bag);
 			choiceSelectedSubscriber.Subscribe(ChoiceSelectedHandler).AddTo(bag);
 			saveMessageSubscriber.Subscribe(message => File.WriteAllText(message, Story.state.ToJson())).AddTo(bag);
 			loadMessageSubscriber.Subscribe(message => Story.state.LoadJson(message)).AddTo(bag);
+			continueAsyncSubscriber.Subscribe(ContinueHandlerAsync)
+			                       .AddTo(bag);
+			choiceSelectedAsyncSubscriber.Subscribe((message, _) =>
+			                                        {
+				                                        ChoiceSelectedHandler(message);
+				                                        return UniTask.CompletedTask;
+			                                        })
+			                             .AddTo(bag);
+			saveAsyncSubscriber.Subscribe((message, _) =>
+			                              {
+				                              File.WriteAllText(message, Story.state.ToJson());
+				                              return UniTask.CompletedTask;
+			                              })
+			                   .AddTo(bag);
+			loadAsyncSubscriber.Subscribe((message, _) =>
+			                              {
+				                              Story.state.LoadJson(message);
+				                              return UniTask.CompletedTask;
+			                              })
+			                   .AddTo(bag);
+
 			_disposable = bag.Build();
 		}
 
-		public void Dispose() => _disposable.Dispose();
 
+		public void Dispose() => _disposable.Dispose();
 
 		public void Initialize() => _log.Information("Story Controller initialized");
 
@@ -131,6 +171,56 @@ namespace InfiniteCanvas.InkIntegration
 			if (Story.currentChoices.Count > 0) PublishChoices();
 		}
 
+		private async UniTask ContinueHandlerAsync(ContinueMessage message = default, CancellationToken cancellationToken = default)
+		{
+			if (_hasBufferedCommand)
+			{
+				_log.Debug("{CommandType} Command: {CommandText:l}", _bufferedCommand.CommandType, _bufferedCommand.Text);
+				await _commandAsyncPublisher.PublishAsync(_bufferedCommand, cancellationToken);
+				_hasBufferedCommand = false;
+				return;
+			}
+
+			if (!Story.canContinue)
+			{
+				if (Story.currentChoices.Count > 0) return;
+				await _endAsyncPublisher.PublishAsync(default, cancellationToken);
+				_log.Information("Story ended");
+				return;
+			}
+
+			if (message.Maximally)
+			{
+				await ContinueUntilCommandOrChoiceAsync(cancellationToken);
+				return;
+			}
+
+			var text = Story.Continue();
+
+			if (string.IsNullOrEmpty(text))
+			{
+				_log.Error("Text returned is null or empty");
+				return;
+			}
+
+			_log.Verbose("Raw text: {RawText:l}", text);
+
+			if (IsCommand(text, out var lineType))
+			{
+				var command = text[2..^1];
+				_log.Debug("{CommandType} Command: {CommandText:l}", lineType, command);
+				await _commandAsyncPublisher.PublishAsync(new CommandMessage(text: command, commandType: lineType), cancellationToken);
+			}
+			else
+			{
+				_log.Information("Text: {Text:l}", text);
+				await _textAsyncPublisher.PublishAsync(text, cancellationToken);
+			}
+
+
+			if (Story.currentChoices.Count > 0) await PublishChoicesAsync(cancellationToken);
+		}
+
 		private bool           _hasBufferedCommand;
 		private CommandMessage _bufferedCommand;
 
@@ -179,6 +269,50 @@ namespace InfiniteCanvas.InkIntegration
 			}
 		}
 
+		private async UniTask ContinueUntilCommandOrChoiceAsync(CancellationToken cancellationToken = default)
+		{
+			var builder = new StringBuilder();
+			while (Story.canContinue)
+			{
+				var part = Story.Continue();
+				_log.Verbose("Raw text: {RawText:l}", part);
+				if (!IsCommand(part, out var lineType))
+				{
+					builder.Append(part);
+					continue;
+				}
+
+				if (builder.Length > 0)
+				{
+					_log.Debug("Sending aggregate text: {Text:l}", builder);
+					await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
+					var command = part[2..^1];
+					_bufferedCommand = new CommandMessage(lineType, command);
+					_hasBufferedCommand = true;
+				}
+				else
+				{
+					var command = part[2..^1];
+					_log.Debug("{CommandType} Command: {CommandText:l}", lineType, command);
+					await _commandAsyncPublisher.PublishAsync(new CommandMessage(lineType, command), cancellationToken);
+				}
+
+				return;
+			}
+
+			_log.Information("Sending aggregate text: {Text:l}", builder);
+			await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
+
+			if (Story.currentChoices.Count > 0)
+			{
+				await PublishChoicesAsync(cancellationToken);
+			}
+			else
+			{
+				_log.Information("Story ended");
+				await _endAsyncPublisher.PublishAsync(default, cancellationToken);
+			}
+		}
 
 		private void ChoiceSelectedHandler(ChoiceSelectedMessage message)
 		{
@@ -193,6 +327,15 @@ namespace InfiniteCanvas.InkIntegration
 
 			using (ChoiceMessage.Get(out var choiceMessage))
 				_choicePublisher.Publish(choiceMessage.Initialize(Story.currentChoices));
+		}
+
+		private async UniTask PublishChoicesAsync(CancellationToken cancellationToken = default)
+		{
+			foreach (var choice in Story.currentChoices)
+				_log.Information("Present choice[{ChoiceIndex}]: {ChoiceText:l}", choice.index, choice.text);
+
+			using (ChoiceMessage.Get(out var choiceMessage))
+				await _choiceAsyncPublisher.PublishAsync(choiceMessage.Initialize(Story.currentChoices), cancellationToken);
 		}
 
 	#endregion
