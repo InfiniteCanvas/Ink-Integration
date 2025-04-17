@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using InfiniteCanvas.Utilities.Extensions;
+using Superpower;
+using Superpower.Parsers;
 using UnityEngine;
 using VContainer.Unity;
 using ILogger = Serilog.ILogger;
@@ -16,6 +20,108 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 		private readonly ILogger _log;
 
 		public ImageCommandParser(ILogger logger) => _log = logger.ForContext<ImageCommandParser>();
+
+		public void Initialize() => _log.Information("Initializing image parser");
+
+		public ImageCommand ParseCommand(in string command) => _commandParser.Parse(command);
+
+	#region Parser Combinator
+
+		private static readonly TextParser<char> _valueDelimiter =
+			Character.EqualTo(';').Or(Character.EqualTo(':'));
+
+		private static readonly TextParser<char> _parameterDelimiter =
+			Character.EqualTo(' ').Or(Character.EqualTo('>'));
+
+		// Parse an identifier (letters, digits, underscores)
+		private static readonly TextParser<string> _identifier =
+			from first in Character.Letter
+			from rest in Character.LetterOrDigit.Or(Character.EqualTo('_')).Many() //allows alphanumeric with _
+			select new string(new[] { first }.Concat(rest).ToArray());
+
+		private static readonly TextParser<float> _float =
+			from num in Numerics.Decimal
+			select float.Parse(num.ToString());
+
+		private static readonly TextParser<(string Namespace, string Pose)> _namespaceAndPose =
+			from ns in _identifier
+			from pose in (
+				from _ in _valueDelimiter
+				from p in _identifier
+				select p).OptionalOrDefault("default")
+			select (ns, pose);
+
+		// Parse the position parameter (p:x;y;z)
+		private static readonly TextParser<Vector3> _positionParameter =
+			from _ in Span.EqualTo("p:")
+			from x in _float
+			from _1 in _valueDelimiter
+			from y in _float
+			from z in _valueDelimiter.IgnoreThen(_float).Optional()
+			select new Vector3(x, y, z ?? 0f);
+
+		// Parse the scale parameter (s:x;y;z)
+		private static readonly TextParser<Vector3> _scaleParameter =
+			from _ in Span.EqualTo("s:")
+			from x in _float
+			from _1 in _valueDelimiter
+			from y in _float
+			from z in _valueDelimiter.IgnoreThen(_float).Optional()
+			select new Vector3(x, y, z ?? 1f);
+
+		// Parse the location parameter (l:w or l:s)
+		private static readonly TextParser<bool> _locationParameter =
+			from _ in Span.EqualTo("l:")
+			from loc in Character.EqualTo('s').Value(true)
+			select loc;
+
+		// Parse any parameter
+		private static readonly TextParser<(string Type, object Value)> _parameter =
+			from delim in _parameterDelimiter
+			from param in _positionParameter.Select(p => ("position", (object)p))
+			                                .Try()
+			                                .Or(_scaleParameter.Select(s => ("scale", (object)s)).Try())
+			                                .Or(_locationParameter.Select(l => ("location", (object)l)))
+			select param;
+
+		// The complete parser for an image command
+		private static readonly TextParser<ImageCommand> _commandParser =
+			// from prefix in Prefix
+			from nsAndPose in _namespaceAndPose
+			from parameters in _parameter.Many()
+			select BuildImageCommand(nsAndPose, parameters);
+
+		private static ImageCommand BuildImageCommand((string Namespace, string Pose)          nsAndPose,
+		                                              IEnumerable<(string Type, object Value)> parameters)
+		{
+			var cmd = new ImageCommand();
+			cmd.Namespace = nsAndPose.Namespace;
+			cmd.Pose = nsAndPose.Pose;
+
+			foreach (var param in parameters)
+			{
+				switch (param.Type)
+				{
+					case "position":
+						cmd.Position = (Vector3)param.Value;
+						cmd.ModifyPosition = true;
+						break;
+					case "scale":
+						cmd.Scale = (Vector3)param.Value;
+						cmd.ModifyScale = true;
+						break;
+					case "location":
+						cmd.IsScreenSpace = (bool)param.Value;
+						break;
+				}
+			}
+
+			return cmd;
+		}
+
+	#endregion
+
+	#region Obsolete
 
 		public bool ParseCommand(in  string             command,
 		                         out ReadOnlySpan<char> imageNameSpace,
@@ -99,7 +205,6 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			return true;
 		}
 
-		public void Initialize() => _log.Information("Initializing image parser");
 
 		private bool TryGetSpace(ReadOnlySpan<char> paramSpan, out bool isScreenSpace)
 		{
@@ -218,5 +323,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 			return true;
 		}
+
+	#endregion
 	}
 }

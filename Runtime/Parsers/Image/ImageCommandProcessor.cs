@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using InfiniteCanvas.InkIntegration.Messages;
 using InfiniteCanvas.Utilities.Extensions;
 using MessagePipe;
+using Superpower;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer.Unity;
@@ -68,29 +69,36 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 		private void CommandMessageHandler(CommandMessage message)
 		{
 			if (message.CommandType != CommandType.Image) return;
+			_log.Debug("Processing Image Command: {ImageCommand}", message.Text);
 
-			if (!_imageCommandParser.ParseCommand(message.Text, out var imageNameSpace, out var imagePose, out var position, out var scale, out var isScreenSpace))
+			try
 			{
-				_log.Error("Failed to parse image command: {ImageCommand}", message.Text);
-				return;
+				var imageCommand = _imageCommandParser.ParseCommand(message.Text);
+				_log.Information("From ParserCombinator: {ImageCommand}", imageCommand);
+
+				_log.Debug("Displaying {ImageNameSpace}:{ImagePose}", imageCommand.Namespace, imageCommand.Pose);
+				var nameSpaceHash = imageCommand.Namespace.GetCustomHashCode();
+				var poseHash = imageCommand.Pose.GetCustomHashCode();
+				var sprite = _imageLibrary.GetImage(nameSpaceHash, poseHash);
+
+				if (_activeSpriteRenderers.TryGetValue(nameSpaceHash, out var activeSpriteRenderer))
+				{
+					_log.Debug("Sprite [{NewSprite}] spawning and replacing [{OldSprite}]", sprite.name, activeSpriteRenderer.sprite.name);
+					activeSpriteRenderer.sprite = sprite;
+					if (imageCommand.ModifyPosition) activeSpriteRenderer.transform.position = imageCommand.Position;
+					if (imageCommand.ModifyScale) activeSpriteRenderer.transform.localScale = imageCommand.Scale;
+					_spriteRendererPool.Release(activeSpriteRenderer);
+				}
+				else
+				{
+					var instantiatedSpriteRenderer = GetSpriteRenderer(sprite, imageCommand.Scale, imageCommand.Position, imageCommand.IsScreenSpace);
+					_log.Debug("Sprite spawned: {NewSprite}", sprite.name);
+					_activeSpriteRenderers[nameSpaceHash] = instantiatedSpriteRenderer;
+				}
 			}
-
-			_log.Debug("Displaying {ImageNameSpace}:{ImagePose}", imageNameSpace.ToString(), imagePose.ToString());
-			var nameSpaceHash = imageNameSpace.GetCustomHashCode();
-			var poseHash = imagePose.GetCustomHashCode();
-			var sprite = _imageLibrary.GetImage(nameSpaceHash, poseHash);
-			var instantiatedSpriteRenderer = GetSpriteRenderer(sprite, scale, position, isScreenSpace);
-
-			if (_activeSpriteRenderers.TryGetValue(nameSpaceHash, out var activeSpriteRenderer))
+			catch (ParseException e)
 			{
-				_log.Debug("Sprite [{NewSprite}] spawning and replacing [{OldSprite}]", sprite.name, activeSpriteRenderer.sprite.name);
-				_spriteRendererPool.Release(activeSpriteRenderer);
-				_activeSpriteRenderers[nameSpaceHash] = instantiatedSpriteRenderer;
-			}
-			else
-			{
-				_log.Debug("Sprite spawned: {NewSprite}", sprite.name);
-				_activeSpriteRenderers[nameSpaceHash] = instantiatedSpriteRenderer;
+				Console.WriteLine(e);
 			}
 		}
 
