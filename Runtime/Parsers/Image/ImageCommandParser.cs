@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using InfiniteCanvas.Utilities.Extensions;
 using Superpower;
 using Superpower.Parsers;
@@ -23,96 +22,88 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 		public void Initialize() => _log.Information("Initializing image parser");
 
-		public ImageCommand ParseCommand(in string command) => _commandParser.Parse(command);
+		public ImageCommand ParseCommand(in string command)
+		{
+			var tokenizer = ImageTokenKindExtensions.GetTokenizer();
+			return _commandParser.Parse(tokenizer.Tokenize(command));
+		}
 
 	#region Parser Combinator
 
-		private static readonly TextParser<char> _valueDelimiter =
-			Character.EqualTo(';').Or(Character.EqualTo(':'));
-
-		private static readonly TextParser<char> _parameterDelimiter =
-			Character.EqualTo(' ').Or(Character.EqualTo('>'));
-
-		// Parse an identifier (letters, digits, underscores)
-		private static readonly TextParser<string> _identifier =
-			from first in Character.Letter
-			from rest in Character.LetterOrDigit.Or(Character.EqualTo('_')).Many() //allows alphanumeric with _
-			select new string(new[] { first }.Concat(rest).ToArray());
-
-		private static readonly TextParser<float> _float =
-			from num in Numerics.Decimal
-			select float.Parse(num.ToString());
-
-		private static readonly TextParser<(string Namespace, string Pose)> _namespaceAndPose =
-			from ns in _identifier
-			from pose in (
-				from _ in _valueDelimiter
-				from p in _identifier
-				select p).OptionalOrDefault("default")
-			select (ns, pose);
-
-		// Parse the position parameter (p:x;y;z)
-		private static readonly TextParser<Vector3> _positionParameter =
-			from _ in Span.EqualTo("p:")
-			from x in _float
-			from _1 in _valueDelimiter
-			from y in _float
-			from z in _valueDelimiter.IgnoreThen(_float).Optional()
-			select new Vector3(x, y, z ?? 0f);
-
-		// Parse the scale parameter (s:x;y;z)
-		private static readonly TextParser<Vector3> _scaleParameter =
-			from _ in Span.EqualTo("s:")
-			from x in _float
-			from _1 in _valueDelimiter
-			from y in _float
-			from z in _valueDelimiter.IgnoreThen(_float).Optional()
-			select new Vector3(x, y, z ?? 1f);
-
-		// Parse the location parameter (l:w or l:s)
-		private static readonly TextParser<bool> _locationParameter =
-			from _ in Span.EqualTo("l:")
-			from loc in Character.EqualTo('s').Value(true)
-			select loc;
-
-		// Parse any parameter
-		private static readonly TextParser<(string Type, object Value)> _parameter =
-			from delim in _parameterDelimiter
-			from param in _positionParameter.Select(p => ("position", (object)p))
-			                                .Try()
-			                                .Or(_scaleParameter.Select(s => ("scale", (object)s)).Try())
-			                                .Or(_locationParameter.Select(l => ("location", (object)l)))
-			select param;
-
-		// The complete parser for an image command
-		private static readonly TextParser<ImageCommand> _commandParser =
-			// from prefix in Prefix
-			from nsAndPose in _namespaceAndPose
-			from parameters in _parameter.Many()
-			select BuildImageCommand(nsAndPose, parameters);
-
-		private static ImageCommand BuildImageCommand((string Namespace, string Pose)          nsAndPose,
-		                                              IEnumerable<(string Type, object Value)> parameters)
+		enum CommandKind
 		{
-			var cmd = new ImageCommand();
-			cmd.Namespace = nsAndPose.Namespace;
-			cmd.Pose = nsAndPose.Pose;
+			None,
+			Position,
+			Scale,
+			ScreenSpace,
+		}
+
+		private static readonly TokenListParser<ImageTokenKind, string> _identifier = Token.EqualTo(ImageTokenKind.Identifier).Select(t => t.ToStringValue());
+		private static readonly TokenListParser<ImageTokenKind, float>  _float      = Token.EqualTo(ImageTokenKind.Number).Select(t => float.Parse(t.ToStringValue()));
+
+		private static readonly TokenListParser<ImageTokenKind, (string Namespace, string Pose)> _namespacePose =
+			from ns in _identifier
+			from p in Token.EqualTo(ImageTokenKind.ValueDelimiter).IgnoreThen(_identifier).OptionalOrDefault("default")
+			select (ns, p);
+
+		private static readonly TokenListParser<ImageTokenKind, Vector3> _positionParameter =
+			from _ in Token.EqualTo(ImageTokenKind.ParamPosition)
+			from x in _float
+			from y in Token.EqualTo(ImageTokenKind.Comma).IgnoreThen(_float)
+			from z in Token.EqualTo(ImageTokenKind.Comma).IgnoreThen(_float).Optional()
+			select new Vector3(x, y, z.GetValueOrDefault(0));
+
+		private static readonly TokenListParser<ImageTokenKind, Vector3> _scaleParameter =
+			from _ in Token.EqualTo(ImageTokenKind.ParamScale)
+			from x in _float
+			from y in Token.EqualTo(ImageTokenKind.Comma).IgnoreThen(_float)
+			from z in Token.EqualTo(ImageTokenKind.Comma).IgnoreThen(_float).Optional()
+			select new Vector3(x, y, z.GetValueOrDefault(1));
+
+		private static readonly TokenListParser<ImageTokenKind, Vector3> _screenSpaceParameter =
+			from screenSpace in Token.EqualTo(ImageTokenKind.ParamScreenSpace)
+			select screenSpace.HasValue ? Vector3.one : Vector3.zero;
+
+		private static readonly TokenListParser<ImageTokenKind, (CommandKind kind, Vector3 value)> _parameter =
+			from _ in Token.EqualTo(ImageTokenKind.ParameterDelimiter)
+			from p in _positionParameter.Select(v => (CommandKind.Position, p: v))
+			                            .Try()
+			                            .Or(_scaleParameter.Select(v => (CommandKind.Scale, p: v)).Try())
+			                            .Or(_screenSpaceParameter.Select(v => (CommandKind.ScreenSpace, p: v)).Try())
+			select p;
+
+		private static readonly TokenListParser<ImageTokenKind, ImageCommand> _commandParser =
+			from nsp in _namespacePose
+			from parameters in _parameter.Many()
+			select BuildImageCommand(nsp, parameters);
+
+
+		private static ImageCommand BuildImageCommand((string Namespace, string Pose)                nsAndPose,
+		                                              IEnumerable<(CommandKind Kind, Vector3 Value)> parameters)
+		{
+			var cmd = new ImageCommand { Namespace = nsAndPose.Namespace, Pose = nsAndPose.Pose };
+			Debug.Log($"{nsAndPose.Namespace}:{nsAndPose.Pose}");
+
+			if (parameters == null) { return cmd; }
 
 			foreach (var param in parameters)
 			{
-				switch (param.Type)
+				Debug.Log($"{param.Kind}: {param.Value}");
+				switch (param.Kind)
 				{
-					case "position":
-						cmd.Position = (Vector3)param.Value;
+					case CommandKind.Position:
+						cmd.Position = param.Value;
 						cmd.ModifyPosition = true;
 						break;
-					case "scale":
-						cmd.Scale = (Vector3)param.Value;
+					case CommandKind.Scale:
+						cmd.Scale = param.Value;
 						cmd.ModifyScale = true;
 						break;
-					case "location":
-						cmd.IsScreenSpace = (bool)param.Value;
+					case CommandKind.ScreenSpace:
+						cmd.IsScreenSpace = param.Value.x > 0;
 						break;
+					case CommandKind.None:
+					default: break;
 				}
 			}
 

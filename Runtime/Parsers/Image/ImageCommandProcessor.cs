@@ -31,7 +31,12 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			_log = logger.ForContext<ImageCommandProcessor>();
 			_spriteRendererPool = new ObjectPool<SpriteRenderer>(() => new GameObject().AddComponent<SpriteRenderer>(),
 			                                                     o => o.gameObject.SetActive(true),
-			                                                     o => o.gameObject.SetActive(false),
+			                                                     o =>
+			                                                     {
+				                                                     o.gameObject.SetActive(false);
+				                                                     o.transform.position = Vector3.zero;
+				                                                     o.transform.localScale = Vector3.one;
+			                                                     },
 			                                                     o =>
 			                                                     {
 				                                                     if (o == null) return;
@@ -74,7 +79,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			try
 			{
 				var imageCommand = _imageCommandParser.ParseCommand(message.Text);
-				_log.Information("From ParserCombinator: {ImageCommand}", imageCommand);
+				_log.Debug("From ParserCombinator: {ImageCommand}", imageCommand);
 
 				_log.Debug("Displaying {ImageNameSpace}:{ImagePose}", imageCommand.Namespace, imageCommand.Pose);
 				var nameSpaceHash = imageCommand.Namespace.GetCustomHashCode();
@@ -83,22 +88,29 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 				if (_activeSpriteRenderers.TryGetValue(nameSpaceHash, out var activeSpriteRenderer))
 				{
-					_log.Debug("Sprite [{NewSprite}] spawning and replacing [{OldSprite}]", sprite.name, activeSpriteRenderer.sprite.name);
-					activeSpriteRenderer.sprite = sprite;
-					if (imageCommand.ModifyPosition) activeSpriteRenderer.transform.position = imageCommand.Position;
-					if (imageCommand.ModifyScale) activeSpriteRenderer.transform.localScale = imageCommand.Scale;
-					_spriteRendererPool.Release(activeSpriteRenderer);
+					_log.Verbose("Sprite [{NewSprite}] spawning and replacing [{OldSprite}]", sprite.name, activeSpriteRenderer.sprite.name);
+					if (imageCommand.Pose == "delete")
+					{
+						_spriteRendererPool.Release(activeSpriteRenderer);
+						_activeSpriteRenderers.Remove(nameSpaceHash);
+					}
+					else
+					{
+						activeSpriteRenderer.sprite = sprite;
+						if (imageCommand.ModifyPosition) activeSpriteRenderer.transform.position = imageCommand.Position;
+						if (imageCommand.ModifyScale) activeSpriteRenderer.transform.localScale = imageCommand.Scale;
+					}
 				}
 				else
 				{
 					var instantiatedSpriteRenderer = GetSpriteRenderer(sprite, imageCommand.Scale, imageCommand.Position, imageCommand.IsScreenSpace);
-					_log.Debug("Sprite spawned: {NewSprite}", sprite.name);
+					_log.Verbose("Sprite spawned: {NewSprite}", sprite.name);
 					_activeSpriteRenderers[nameSpaceHash] = instantiatedSpriteRenderer;
 				}
 			}
 			catch (ParseException e)
 			{
-				Console.WriteLine(e);
+				_log.Error(e, "Failed to parse Image Command: {ImageCommand}", message.Text);
 			}
 		}
 
