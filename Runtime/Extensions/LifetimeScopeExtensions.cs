@@ -51,10 +51,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 				}
 			}
 
-			if (logger != null)
-			{
-				builder.RegisterInstance(logger).As<ILogger>();
-			}
+			if (logger != null) builder.RegisterInstance(logger).As<ILogger>();
 			else
 			{
 				builder.Register(resolver =>
@@ -125,10 +122,7 @@ namespace InfiniteCanvas.InkIntegration.Extensions
 			}
 
 
-			if (logger != null)
-			{
-				builder.RegisterInstance(logger).As<ILogger>();
-			}
+			if (logger != null) builder.RegisterInstance(logger).As<ILogger>();
 			else
 			{
 				builder.Register(resolver =>

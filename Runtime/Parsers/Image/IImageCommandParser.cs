@@ -18,13 +18,13 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 	public class ImageCommand
 	{
+		public bool    IsScreenSpace  = false;
+		public bool    ModifyPosition = false;
+		public bool    ModifyScale    = false;
 		public string  Namespace      = string.Empty;
 		public string  Pose           = "default";
 		public Vector3 Position       = Vector3.zero;
 		public Vector3 Scale          = Vector3.one;
-		public bool    IsScreenSpace  = false;
-		public bool    ModifyPosition = false;
-		public bool    ModifyScale    = false;
 
 		public override string ToString()
 			=> $"{nameof(Namespace)}: {Namespace}, {nameof(Pose)}: {Pose}, {nameof(Position)}: {Position}, {nameof(Scale)}: {Scale}, {nameof(IsScreenSpace)}: {IsScreenSpace}, {nameof(ModifyPosition)}: {ModifyPosition}, {nameof(ModifyScale)}: {ModifyScale}";

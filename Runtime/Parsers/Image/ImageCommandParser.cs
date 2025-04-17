@@ -21,9 +21,9 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 		public ImageCommandParser(ILogger logger) => _log = logger.ForContext<ImageCommandParser>();
 
-		public void Initialize() => _log.Information("Initializing image parser");
+		public ImageCommand ParseCommand(in string command) => _commandParser.Parse(_tokenizer.Tokenize(command));
 
-		public ImageCommand ParseCommand(in string command) { return _commandParser.Parse(_tokenizer.Tokenize(command)); }
+		public void Initialize() => _log.Information("Initializing image parser");
 
 	#region Parser Combinator
 
@@ -97,7 +97,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			var cmd = new ImageCommand { Namespace = nsAndPose.Namespace, Pose = nsAndPose.Pose };
 			Debug.Log($"{nsAndPose.Namespace}:{nsAndPose.Pose}");
 
-			if (parameters == null) { return cmd; }
+			if (parameters == null) return cmd;
 
 			foreach (var param in parameters)
 			{
@@ -175,10 +175,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 			for (var i = 1; i <= delimiterIndices.Length; i++)
 			{
-				if (i == delimiterIndices.Length)
-				{
-					parameterSpan = commandSpan[(delimiterIndices[^1] + 1)..];
-				}
+				if (i == delimiterIndices.Length) parameterSpan = commandSpan[(delimiterIndices[^1] + 1)..];
 				else
 				{
 					var start = delimiterIndices[i - 1] + 1;

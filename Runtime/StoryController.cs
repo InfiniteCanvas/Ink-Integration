@@ -26,8 +26,7 @@ namespace InfiniteCanvas.InkIntegration
 		private readonly IPublisher<TextMessage>         _textPublisher;
 
 		// I'm exposing this, so I can subscribe to some of the events, if ever needed
-		public readonly Story  Story;
-		public          string CurrentSpeaker { get; private set; }
+		public readonly Story Story;
 
 		public StoryController(InkStoryAsset                           inkStoryAsset,
 		                       ILogger                                 logger,
@@ -89,6 +88,8 @@ namespace InfiniteCanvas.InkIntegration
 			_disposable = bag.Build();
 		}
 
+		public string CurrentSpeaker { get; private set; }
+
 
 		public void Dispose() => _disposable.Dispose();
 
@@ -112,10 +113,12 @@ namespace InfiniteCanvas.InkIntegration
 				_   => CommandType.None,
 			};
 			if (commandType == CommandType.None)
+			{
 				_log.Warning("It's an unknown command. While it's not going to crash anything, you should never see this message. "
 				           + "Use '>:' for 'Other' type commands for now and maybe send a pull request for the command type you need. "
 				           + "Parsed text: {RawText:l}",
 				             text.ToString());
+			}
 
 			return true;
 		}
@@ -167,12 +170,10 @@ namespace InfiniteCanvas.InkIntegration
 				_log.Information("Text: {Text:l}, {Tags}", text, Story.currentTags);
 				if (Story.currentTags.Count > 0)
 				{
+					CurrentSpeaker = Story.currentTags[0];
 					_textPublisher.Publish(TextMessage.WithTag(text));
 				}
-				else
-				{
-					_textPublisher.Publish(text);
-				}
+				else _textPublisher.Publish(text);
 			}
 
 
@@ -224,12 +225,10 @@ namespace InfiniteCanvas.InkIntegration
 				_log.Information("Text: {Text:l}", text);
 				if (Story.currentTags.Count > 0)
 				{
+					CurrentSpeaker = Story.currentTags[0];
 					await _textAsyncPublisher.PublishAsync(TextMessage.WithTag(text), cancellationToken);
 				}
-				else
-				{
-					await _textAsyncPublisher.PublishAsync(text, cancellationToken);
-				}
+				else await _textAsyncPublisher.PublishAsync(text, cancellationToken);
 			}
 
 
@@ -257,12 +256,10 @@ namespace InfiniteCanvas.InkIntegration
 					_log.Debug("Sending aggregate text: {Text:l}", builder);
 					if (Story.currentTags.Count > 0)
 					{
+						CurrentSpeaker = Story.currentTags[0];
 						_textPublisher.Publish(TextMessage.WithTag(builder.ToString()));
 					}
-					else
-					{
-						_textPublisher.Publish(builder.ToString());
-					}
+					else _textPublisher.Publish(builder.ToString());
 
 					var command = part[2..^1];
 					_bufferedCommand = new CommandMessage(lineType, command);
@@ -282,17 +279,12 @@ namespace InfiniteCanvas.InkIntegration
 
 			if (Story.currentTags.Count > 0)
 			{
+				CurrentSpeaker = Story.currentTags[0];
 				_textPublisher.Publish(TextMessage.WithTag(builder.ToString()));
 			}
-			else
-			{
-				_textPublisher.Publish(builder.ToString());
-			}
+			else _textPublisher.Publish(builder.ToString());
 
-			if (Story.currentChoices.Count > 0)
-			{
-				PublishChoices();
-			}
+			if (Story.currentChoices.Count > 0) PublishChoices();
 			else
 			{
 				_log.Information("Story ended");
@@ -318,12 +310,10 @@ namespace InfiniteCanvas.InkIntegration
 					_log.Debug("Sending aggregate text: {Text:l}", builder);
 					if (Story.currentTags.Count > 0)
 					{
+						CurrentSpeaker = Story.currentTags[0];
 						await _textAsyncPublisher.PublishAsync(TextMessage.WithTag(builder.ToString()), cancellationToken);
 					}
-					else
-					{
-						await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
-					}
+					else await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
 
 					var command = part[2..^1];
 					_bufferedCommand = new CommandMessage(lineType, command);
@@ -342,17 +332,12 @@ namespace InfiniteCanvas.InkIntegration
 			_log.Information("Sending aggregate text: {Text:l}", builder);
 			if (Story.currentTags.Count > 0)
 			{
+				CurrentSpeaker = Story.currentTags[0];
 				await _textAsyncPublisher.PublishAsync(TextMessage.WithTag(builder.ToString()), cancellationToken);
 			}
-			else
-			{
-				await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
-			}
+			else await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
 
-			if (Story.currentChoices.Count > 0)
-			{
-				await PublishChoicesAsync(cancellationToken);
-			}
+			if (Story.currentChoices.Count > 0) await PublishChoicesAsync(cancellationToken);
 			else
 			{
 				_log.Information("Story ended");

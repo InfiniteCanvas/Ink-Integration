@@ -1,12 +1,12 @@
-﻿#if UNITY_EDITOR
-using UnityEditor;
-#endif
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using InfiniteCanvas.Utilities;
 using Serilog;
 using Sirenix.OdinInspector;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace InfiniteCanvas.InkIntegration.Parsers.Image
 {
@@ -37,7 +37,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 		}
 
 #if UNITY_EDITOR
-		[PropertySpace, TitleGroup("Image Library", subtitle: "Editable"), SerializeField, HideLabel,
+		[PropertySpace, TitleGroup("Image Library", "Editable"), SerializeField, HideLabel,
 		 ListDrawerSettings(DefaultExpandedState = true)]
 		private SerializableNestedDictionary<string, string, Sprite> _imageLibrary = new();
 
@@ -47,10 +47,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			_runtimeLibrary.Clear();
 			foreach (var (key, dic) in _imageLibrary.GetOuterDictionary())
 			{
-				foreach (var (pose, sprite) in dic)
-				{
-					_runtimeLibrary.AddOrUpdate(key, pose, sprite);
-				}
+				foreach (var (pose, sprite) in dic) _runtimeLibrary.AddOrUpdate(key, pose, sprite);
 			}
 		}
 
@@ -76,8 +73,8 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			_runtimeLibrary.Clear();
 			foreach (var imagePath in _imagePaths)
 			{
-				var folder = Directory.GetParent(imagePath)?.Name;
-				var filename = Path.GetFileNameWithoutExtension(imagePath);
+				var folder = Directory.GetParent(imagePath)?.Name.Replace(' ', '_');
+				var filename = Path.GetFileNameWithoutExtension(imagePath).Replace(' ', '_');
 				var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(imagePath);
 
 				_runtimeLibrary.AddOrUpdate(folder, filename, sprite);

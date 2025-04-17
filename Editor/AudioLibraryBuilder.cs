@@ -18,7 +18,7 @@ namespace InfiniteCanvas.InkIntegration.Editor
 				if (eventRef.Path.StartsWith("snapshot")) { continue; }
 
 				var eventReference = new EventReference() { Guid = eventRef.Guid, Path = eventRef.Path };
-				AudioLibrary.LibraryItems.Add(new AudioLibrary.LibraryItem(eventRef.name.Split('/')[^1],
+				AudioLibrary.LibraryItems.Add(new AudioLibrary.LibraryItem(eventRef.name.Split('/')[^1].Replace(' ', '_'),
 				                                                           eventReference));
 			}
 		}
