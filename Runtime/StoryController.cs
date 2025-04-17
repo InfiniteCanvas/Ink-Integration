@@ -26,7 +26,8 @@ namespace InfiniteCanvas.InkIntegration
 		private readonly IPublisher<TextMessage>         _textPublisher;
 
 		// I'm exposing this, so I can subscribe to some of the events, if ever needed
-		public readonly Story Story;
+		public readonly Story  Story;
+		public          string CurrentSpeaker { get; private set; }
 
 		public StoryController(InkStoryAsset                           inkStoryAsset,
 		                       ILogger                                 logger,
@@ -163,8 +164,15 @@ namespace InfiniteCanvas.InkIntegration
 			}
 			else
 			{
-				_log.Information("Text: {Text:l}", text);
-				_textPublisher.Publish(text);
+				_log.Information("Text: {Text:l}, {Tags}", text, Story.currentTags);
+				if (Story.currentTags.Count > 0)
+				{
+					_textPublisher.Publish(TextMessage.WithTag(text));
+				}
+				else
+				{
+					_textPublisher.Publish(text);
+				}
 			}
 
 
@@ -214,7 +222,14 @@ namespace InfiniteCanvas.InkIntegration
 			else
 			{
 				_log.Information("Text: {Text:l}", text);
-				await _textAsyncPublisher.PublishAsync(text, cancellationToken);
+				if (Story.currentTags.Count > 0)
+				{
+					await _textAsyncPublisher.PublishAsync(TextMessage.WithTag(text), cancellationToken);
+				}
+				else
+				{
+					await _textAsyncPublisher.PublishAsync(text, cancellationToken);
+				}
 			}
 
 
@@ -240,7 +255,15 @@ namespace InfiniteCanvas.InkIntegration
 				if (builder.Length > 0)
 				{
 					_log.Debug("Sending aggregate text: {Text:l}", builder);
-					_textPublisher.Publish(builder.ToString());
+					if (Story.currentTags.Count > 0)
+					{
+						_textPublisher.Publish(TextMessage.WithTag(builder.ToString()));
+					}
+					else
+					{
+						_textPublisher.Publish(builder.ToString());
+					}
+
 					var command = part[2..^1];
 					_bufferedCommand = new CommandMessage(lineType, command);
 					_hasBufferedCommand = true;
@@ -256,7 +279,15 @@ namespace InfiniteCanvas.InkIntegration
 			}
 
 			_log.Information("Sending aggregate text: {Text:l}", builder);
-			_textPublisher.Publish(builder.ToString());
+
+			if (Story.currentTags.Count > 0)
+			{
+				_textPublisher.Publish(TextMessage.WithTag(builder.ToString()));
+			}
+			else
+			{
+				_textPublisher.Publish(builder.ToString());
+			}
 
 			if (Story.currentChoices.Count > 0)
 			{
@@ -285,7 +316,15 @@ namespace InfiniteCanvas.InkIntegration
 				if (builder.Length > 0)
 				{
 					_log.Debug("Sending aggregate text: {Text:l}", builder);
-					await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
+					if (Story.currentTags.Count > 0)
+					{
+						await _textAsyncPublisher.PublishAsync(TextMessage.WithTag(builder.ToString()), cancellationToken);
+					}
+					else
+					{
+						await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
+					}
+
 					var command = part[2..^1];
 					_bufferedCommand = new CommandMessage(lineType, command);
 					_hasBufferedCommand = true;
@@ -301,7 +340,14 @@ namespace InfiniteCanvas.InkIntegration
 			}
 
 			_log.Information("Sending aggregate text: {Text:l}", builder);
-			await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
+			if (Story.currentTags.Count > 0)
+			{
+				await _textAsyncPublisher.PublishAsync(TextMessage.WithTag(builder.ToString()), cancellationToken);
+			}
+			else
+			{
+				await _textAsyncPublisher.PublishAsync(builder.ToString(), cancellationToken);
+			}
 
 			if (Story.currentChoices.Count > 0)
 			{

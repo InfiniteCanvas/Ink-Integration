@@ -1,8 +1,13 @@
-﻿namespace InfiniteCanvas.InkIntegration.Messages
+﻿using System;
+
+namespace InfiniteCanvas.InkIntegration.Messages
 {
-	public struct ContinueMessage
+	public readonly struct ContinueMessage
 	{
-		public bool Maximally;
+		/// <summary>
+		/// Continues until next command or choice. Don't use if you don't want to miss tags!
+		/// </summary>
+		public readonly bool Maximally;
 
 		public ContinueMessage(bool maximally) => Maximally = maximally;
 
