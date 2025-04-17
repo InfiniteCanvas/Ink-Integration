@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using InfiniteCanvas.Utilities.Extensions;
 using Superpower;
 using Superpower.Parsers;
+using Superpower.Tokenizers;
 using UnityEngine;
 using VContainer.Unity;
 using ILogger = Serilog.ILogger;
@@ -22,15 +23,27 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 
 		public void Initialize() => _log.Information("Initializing image parser");
 
-		public ImageCommand ParseCommand(in string command)
-		{
-			var tokenizer = ImageTokenKindExtensions.GetTokenizer();
-			return _commandParser.Parse(tokenizer.Tokenize(command));
-		}
+		public ImageCommand ParseCommand(in string command) { return _commandParser.Parse(_tokenizer.Tokenize(command)); }
 
 	#region Parser Combinator
 
-		enum CommandKind
+		private static readonly TextParser<string> _identifierTokens =
+			from first in Character.Letter
+			from rest in Character.LetterOrDigit.Or(Character.EqualTo('_')).Many() //allows alphanumeric with _
+			select new string($"{first}{rest}");
+
+		private static readonly Tokenizer<ImageTokenKind> _tokenizer = new TokenizerBuilder<ImageTokenKind>()
+		                                                              .Match(Character.EqualTo(' '), ImageTokenKind.ParameterDelimiter)
+		                                                              .Match(Character.EqualTo(':'), ImageTokenKind.ValueDelimiter)
+		                                                              .Match(Character.EqualTo(','), ImageTokenKind.Comma)
+		                                                              .Match(Numerics.Decimal,       ImageTokenKind.Number)
+		                                                              .Match(Span.EqualTo("p:"),     ImageTokenKind.ParamPosition)
+		                                                              .Match(Span.EqualTo("s:"),     ImageTokenKind.ParamScale)
+		                                                              .Match(Span.EqualTo("ui"),     ImageTokenKind.ParamScreenSpace)
+		                                                              .Match(_identifierTokens,      ImageTokenKind.Identifier)
+		                                                              .Build();
+
+		private enum CommandKind
 		{
 			None,
 			Position,
