@@ -4,7 +4,6 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 using InfiniteCanvas.Utilities;
-using InfiniteCanvas.Utilities.Extensions;
 using Serilog;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -14,12 +13,12 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 	[CreateAssetMenu(fileName = "Image Library", menuName = "Infinite Canvas/Image Library", order = 0)]
 	public class ImageLibrary : ScriptableObject
 	{
-		[SerializeField, ReadOnly] private SerializableNestedDictionary<int, int, Sprite> _runtimeLibrary = new();
+		[SerializeField, ReadOnly] private SerializableNestedDictionary<string, string, Sprite> _runtimeLibrary = new();
 
 		[Required(InfoMessageType.Warning, ErrorMessage = "Provide a default image that will be returned when an image could be loaded.")]
 		public Sprite DefaultSprite;
 
-		public Sprite GetImage(int nameSpace, int pose)
+		public Sprite GetImage(string nameSpace, string pose)
 		{
 			if (_runtimeLibrary.TryGetInnerDictionary(nameSpace, out var poses))
 			{
@@ -30,7 +29,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 				}
 
 				// return default from name space, else our generic default sprite
-				return poses.TryGetValue("default".GetCustomHashCode(), out sprite) ? sprite : DefaultSprite;
+				return poses.TryGetValue("default", out sprite) ? sprite : DefaultSprite;
 			}
 
 			Log.ForContext<ImageLibrary>().Error("Could not find namespace: {ImageNameSpace}", nameSpace);
@@ -50,7 +49,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 			{
 				foreach (var (pose, sprite) in dic)
 				{
-					_runtimeLibrary.AddOrUpdate(key.GetCustomHashCode(), pose.GetCustomHashCode(), sprite);
+					_runtimeLibrary.AddOrUpdate(key, pose, sprite);
 				}
 			}
 		}
@@ -81,9 +80,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 				var filename = Path.GetFileNameWithoutExtension(imagePath);
 				var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(imagePath);
 
-				var nameSpaceHash = folder.GetCustomHashCode();
-				var poseHash = filename.GetCustomHashCode();
-				_runtimeLibrary.AddOrUpdate(nameSpaceHash, poseHash, sprite);
+				_runtimeLibrary.AddOrUpdate(folder, filename, sprite);
 				_imageLibrary.AddOrUpdate(folder, filename, sprite);
 			}
 		}

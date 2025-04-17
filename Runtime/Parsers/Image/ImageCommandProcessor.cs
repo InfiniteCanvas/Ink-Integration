@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using InfiniteCanvas.InkIntegration.Messages;
-using InfiniteCanvas.Utilities.Extensions;
 using MessagePipe;
 using Superpower;
 using UnityEngine;
@@ -15,12 +14,12 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 {
 	public class ImageCommandProcessor : IDisposable, IInitializable
 	{
-		private readonly Dictionary<int, SpriteRenderer> _activeSpriteRenderers = new();
-		private readonly IDisposable                     _disposable;
-		private readonly IImageCommandParser             _imageCommandParser;
-		private readonly ImageLibrary                    _imageLibrary;
-		private readonly ILogger                         _log;
-		private readonly ObjectPool<SpriteRenderer>      _spriteRendererPool;
+		private readonly Dictionary<string, SpriteRenderer> _activeSpriteRenderers = new();
+		private readonly IDisposable                        _disposable;
+		private readonly IImageCommandParser                _imageCommandParser;
+		private readonly ImageLibrary                       _imageLibrary;
+		private readonly ILogger                            _log;
+		private readonly ObjectPool<SpriteRenderer>         _spriteRendererPool;
 
 		public ImageCommandProcessor(ILogger                          logger,
 		                             IImageCommandParser              imageCommandParser,
@@ -82,17 +81,15 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 				_log.Debug("From ParserCombinator: {ImageCommand}", imageCommand);
 
 				_log.Debug("Displaying {ImageNameSpace}:{ImagePose}", imageCommand.Namespace, imageCommand.Pose);
-				var nameSpaceHash = imageCommand.Namespace.GetCustomHashCode();
-				var poseHash = imageCommand.Pose.GetCustomHashCode();
-				var sprite = _imageLibrary.GetImage(nameSpaceHash, poseHash);
+				var sprite = _imageLibrary.GetImage(imageCommand.Namespace, imageCommand.Pose);
 
-				if (_activeSpriteRenderers.TryGetValue(nameSpaceHash, out var activeSpriteRenderer))
+				if (_activeSpriteRenderers.TryGetValue(imageCommand.Namespace, out var activeSpriteRenderer))
 				{
 					_log.Verbose("Sprite [{NewSprite}] spawning and replacing [{OldSprite}]", sprite.name, activeSpriteRenderer.sprite.name);
 					if (imageCommand.Pose == "delete")
 					{
 						_spriteRendererPool.Release(activeSpriteRenderer);
-						_activeSpriteRenderers.Remove(nameSpaceHash);
+						_activeSpriteRenderers.Remove(imageCommand.Namespace);
 					}
 					else
 					{
@@ -105,7 +102,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 				{
 					var instantiatedSpriteRenderer = GetSpriteRenderer(sprite, imageCommand.Scale, imageCommand.Position, imageCommand.IsScreenSpace);
 					_log.Verbose("Sprite spawned: {NewSprite}", sprite.name);
-					_activeSpriteRenderers[nameSpaceHash] = instantiatedSpriteRenderer;
+					_activeSpriteRenderers[imageCommand.Namespace] = instantiatedSpriteRenderer;
 				}
 			}
 			catch (ParseException e)
