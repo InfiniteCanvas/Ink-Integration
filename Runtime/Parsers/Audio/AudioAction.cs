@@ -2,8 +2,10 @@
 {
 	public enum AudioAction
 	{
+		None,
 		Play,
 		TogglePause,
+		Reset,
 		Stop,
 		Remove,
 	}
