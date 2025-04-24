@@ -8,6 +8,12 @@ The gist of it is **[major.minor.patch]**:
 - **Minor**: API upgrades, backwards compatible, behaviour unchanged
 - **Patch**: API unchanged, fixed functionality
 
+## [4.3.3] - 2025-04-24
+
+### Fixed
+
+- correctly uses invariant culture for parsing floats now
+
 ## [4.3.2] - 2025-04-24
 
 ### Fixed

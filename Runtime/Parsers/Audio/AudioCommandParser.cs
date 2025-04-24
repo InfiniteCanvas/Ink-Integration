@@ -1,4 +1,5 @@
-﻿using Superpower;
+﻿using System.Globalization;
+using Superpower;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
 using UnityEngine;
@@ -42,7 +43,8 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 
 		private static readonly TokenListParser<AudioTokenKind, string> _text = Token.EqualTo(AudioTokenKind.Identifier).Select(symbol => symbol.ToStringValue());
 
-		private static readonly TokenListParser<AudioTokenKind, float> _float = Token.EqualTo(AudioTokenKind.Number).Select(token => float.Parse(token.ToStringValue()));
+		private static readonly TokenListParser<AudioTokenKind, float> _float = Token.EqualTo(AudioTokenKind.Number)
+		                                                                             .Select(token => float.Parse(token.ToStringValue(), CultureInfo.InvariantCulture));
 
 		private static readonly TokenListParser<AudioTokenKind, AudioAction> _audioAction =
 			from _ in Token.EqualTo(AudioTokenKind.Delimiter)
@@ -73,7 +75,8 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Audio
 			                             .Select(tokens => AudioParameters.WithLabel(tokens[0].ToStringValue(), tokens[^1].ToStringValue()))
 			                             .Try()
 			                             .Or(Token.Sequence(AudioTokenKind.Identifier, AudioTokenKind.ValueDelimiter, AudioTokenKind.Number)
-			                                      .Select(tokens => AudioParameters.WithValue(tokens[0].ToStringValue(), float.Parse(tokens[^1].ToStringValue()))))
+			                                      .Select(tokens => AudioParameters.WithValue(tokens[0].ToStringValue(),
+			                                                                                  float.Parse(tokens[^1].ToStringValue(), CultureInfo.InvariantCulture))))
 			select audioParameters;
 
 		private readonly TokenListParser<AudioTokenKind, AudioCommand> _commandParser =

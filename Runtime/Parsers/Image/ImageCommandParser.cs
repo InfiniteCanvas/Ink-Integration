@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using Serilog;
 using Superpower;
 using Superpower.Parsers;
@@ -46,7 +47,7 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 		}
 
 		private static readonly TokenListParser<ImageTokenKind, string> _identifier = Token.EqualTo(ImageTokenKind.Identifier).Select(t => t.ToStringValue());
-		private static readonly TokenListParser<ImageTokenKind, float>  _float      = Token.EqualTo(ImageTokenKind.Number).Select(t => float.Parse(t.ToStringValue()));
+		private static readonly TokenListParser<ImageTokenKind, float>  _float      = Token.EqualTo(ImageTokenKind.Number).Select(t => float.Parse(t.ToStringValue(), CultureInfo.InvariantCulture));
 
 		private static readonly TokenListParser<ImageTokenKind, (string Namespace, string Pose)> _namespacePose =
 			from ns in _identifier
