@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Serilog;
 using Superpower;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
@@ -88,13 +89,13 @@ namespace InfiniteCanvas.InkIntegration.Parsers.Image
 		                                              IEnumerable<(CommandKind Kind, Vector3 Value)> parameters)
 		{
 			var cmd = new ImageCommand { Namespace = nsAndPose.Namespace, Pose = nsAndPose.Pose };
-			Debug.Log($"{nsAndPose.Namespace}:{nsAndPose.Pose}");
+			Log.Verbose("{ImageNamespace}:{ImagePose}", nsAndPose.Namespace, nsAndPose.Pose);
 
 			if (parameters == null) return cmd;
 
 			foreach (var param in parameters)
 			{
-				Debug.Log($"{param.Kind}: {param.Value}");
+				Log.Verbose("{ImageParamKind}: {ImageParamValue}", param.Kind, param.Value);
 				switch (param.Kind)
 				{
 					case CommandKind.Position:

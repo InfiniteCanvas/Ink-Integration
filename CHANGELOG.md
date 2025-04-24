@@ -8,6 +8,12 @@ The gist of it is **[major.minor.patch]**:
 - **Minor**: API upgrades, backwards compatible, behaviour unchanged
 - **Patch**: API unchanged, fixed functionality
 
+## [4.3.2] - 2025-04-24
+
+### Fixed
+
+- correctly uses serilog now instead of unity debug log
+
 ## [4.3.1] - 2025-04-10
 
 ### Fixed
